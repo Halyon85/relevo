@@ -77,7 +77,7 @@ private enum Faltantes {
 /// Glosario: hub → hub · portátil → portable drive · sincronizar → sync · vínculo → link · Me voy → I'm leaving.
 private let traduccionesIngles: [String: String] = [
     // Lados (llegan del motor como "hub"/"portátil")
-    "hub": "hub",
+    "disco de casa": "home drive",
     "portátil": "portable drive",
 
     // Ajustes
@@ -119,8 +119,7 @@ private let traduccionesIngles: [String: String] = [
     "Salir de Relevo": "Quit Relevo",
 
     // Cifrado (errores)
-    "Solo se pueden cifrar discos en formato APFS (este es %@). Para cambiarlo hay que borrarlo con la Utilidad de Discos; el hub tiene todo, así que después se vuelve a copiar.": 
-        "Only APFS drives can be encrypted (this one is %@). Changing that means erasing it in Disk Utility; the hub has everything, so it gets copied back afterwards.",
+    "Solo se pueden cifrar discos en formato APFS (este es %@). Para cambiarlo hay que borrarlo con la Utilidad de Discos; el disco de casa tiene todo, así que después se vuelve a copiar.": "Only APFS drives can be encrypted (this one is %@). Changing that means erasing it in Disk Utility; the home drive has everything, so it gets copied back afterwards.",
     "otro formato": "another format",
     "Solo se cifran discos externos.": "Only external drives can be encrypted.",
     "Este disco ya está cifrado.": "This drive is already encrypted.",
@@ -151,12 +150,12 @@ private let traduccionesIngles: [String: String] = [
     "Todo copiado. Ya podés desenchufar %@.": "Everything is copied. You can unplug %@ now.",
 
     // Ícono de cada disco
-    "HUB · CASA": "HUB · HOME",
+    "CASA": "HOME",
     "PORTÁTIL": "PORTABLE",
 
     // Historial (resumen de cada pasada)
     "%ld al portátil": "%ld to portable",
-    "%ld al hub": "%ld to hub",
+    "%ld a casa": "%ld to home",
     "%ld a la papelera": "%ld to trash",
     "%ld con dos versiones": "%ld with two versions",
     "revisado": "checked",
@@ -173,15 +172,11 @@ private let traduccionesIngles: [String: String] = [
     "Seguir": "Continue",
     "Crear y elegir qué se sincroniza": "Create and choose what syncs",
     "¿Dónde trabajás?": "Where do you work?",
-    "El hub: el disco (o la carpeta de esta Mac) que queda en casa y tiene todo.": 
-        "The hub: the drive (or folder on this Mac) that stays at home and has everything.",
     "%@ libres": "%@ free",
     "Una carpeta de esta Mac…": "A folder on this Mac…",
     "Por ejemplo, tu carpeta de Proyectos en el disco de la Mac.": "For example, your Projects folder on the Mac's drive.",
     "Volver a buscar discos": "Look for drives again",
     "¿Qué disco te llevás?": "Which drive do you take with you?",
-    "El portátil: queda igual al hub y lo usás afuera. Tiene que estar en formato de Mac (APFS).": 
-        "The portable drive: it mirrors the hub and you use it away from home. It must be in Mac format (APFS).",
     "Enchufá el disco que te vas a llevar y tocá “Volver a buscar discos”.": 
         "Plug in the drive you'll take with you and click “Look for drives again”.",
     "%@: es formato de Windows. Pasalo a APFS en la Utilidad de Discos para usarlo (eso lo borra).": 
@@ -193,14 +188,14 @@ private let traduccionesIngles: [String: String] = [
     "Nombre de la carpeta": "Folder name",
     "Casi listo": "Almost done",
     "Después elegís qué carpetas se sincronizan.": "Next, you'll choose which folders sync.",
-    "Hub": "Hub",
+    "Disco de casa": "Home drive",
     "Portátil": "Portable drive",
     "Ponerle al portátil el nombre “%@”": "Rename the portable drive to “%@”",
     "Si querés, después podés cifrar el portátil desde Discos (por si lo perdés).": 
         "If you want, you can encrypt the portable drive later from Drives (in case you lose it).",
     "Ese portátil ya está en otro vínculo. Usá “Guardar en una carpeta del portátil” para compartirlo.": 
         "That portable drive is already in another link. Use “Save to a folder on the portable drive” to share it.",
-    "Usar como hub": "Use as hub",
+    "Usar como disco de casa": "Use as home drive",
     "Elegí la carpeta donde trabajás (por ejemplo, Proyectos).": "Choose the folder where you work (for example, Projects).",
 
     // Hoja de cifrar
@@ -222,8 +217,7 @@ private let traduccionesIngles: [String: String] = [
     "Otra clave": "Another password",
     "Abrir Contraseñas": "Open Passwords",
     "Dónde guardarla": "Where to keep it",
-    "• Queda sola en el llavero de esta Mac (por eso acá se abre sin pedirla).\n• Guardala también en la app Contraseñas (botón “+”, nombre: “Disco %@”) o anotala en un papel que no viaje con el disco.\n• Si se pierde la clave y no está en ningún lado, lo del disco no se puede recuperar. Pero tranqui: el hub tiene todo, así que se borra el portátil y Relevo lo vuelve a llenar.": 
-        "• It's saved automatically in this Mac's keychain (that's why it unlocks here without asking).\n• Also save it in the Passwords app (“+” button, name: “Drive %@”) or write it on paper that doesn't travel with the drive.\n• If the password is lost and isn't saved anywhere, the drive's contents can't be recovered. But don't worry: the hub has everything, so the portable drive gets erased and Relevo fills it again.",
+    "• Queda sola en el llavero de esta Mac (por eso acá se abre sin pedirla).\n• Guardala también en la app Contraseñas (botón “+”, nombre: “Disco %@”) o anotala en un papel que no viaje con el disco.\n• Si se pierde la clave y no está en ningún lado, lo del disco no se puede recuperar. Pero tranqui: el disco de casa tiene todo, así que se borra el portátil y Relevo lo vuelve a llenar.": "• It's saved automatically in this Mac's keychain (that's why it unlocks here without asking).\n• Also save it in the Passwords app (“+” button, name: “Drive %@”) or write it on paper that doesn't travel with the drive.\n• If the password is lost and isn't saved anywhere, the drive's contents can't be recovered. But don't worry: the home drive has everything, so the portable drive gets erased and Relevo fills it again.",
     "Para estar seguros de que la guardaste: escribí la **última palabra** de la clave (la sexta, antes del número).": 
         "To make sure you saved it: type the **last word** of the password (the sixth one, before the number).",
     "última palabra": "last word",
@@ -261,9 +255,9 @@ private let traduccionesIngles: [String: String] = [
     // Qué se releva
     "Qué se sincroniza": "What syncs",
     "No hay carpetas": "No folders",
-    "Creá carpetas en el hub y aparecen acá.": "Create folders on the hub and they'll show up here.",
-    "Conectá el hub para elegir": "Connect the hub to choose",
-    "Las carpetas se leen del hub (%@).": "Folders are read from the hub (%@).",
+    "Creá carpetas en el disco de casa y aparecen acá.": "Create folders on the home drive and they'll show up here.",
+    "Conectá el disco de casa para elegir": "Connect the home drive to choose",
+    "Las carpetas se leen del disco de casa (%@).": "Folders are read from the home drive (%@).",
     "Todavía no hay discos elegidos": "No drives chosen yet",
     "Empezar": "Get started",
     "Sin subcarpetas": "No subfolders",
@@ -298,7 +292,7 @@ private let traduccionesIngles: [String: String] = [
     "Frenar": "Stop",
     "Revisión terminada: todo coincide byte a byte.": "Check finished: everything matches byte for byte.",
     "%ld archivo(s) no coinciden aunque figuran iguales:": "%ld file(s) don't match even though they look identical:",
-    "Copiarlos de nuevo desde el hub": "Copy them again from the hub",
+    "Copiarlos de nuevo desde el disco de casa": "Copy them again from the home drive",
     "Ahora no": "Not now",
 
     // Lo que nunca se releva (pestaña de "Qué se releva")
@@ -344,7 +338,7 @@ private let traduccionesIngles: [String: String] = [
     "Volver a la anterior": "Restore previous",
     "Recuperar": "Recover",
     "→ portátil": "→ portable",
-    "→ hub": "→ hub",
+    "→ casa": "→ home",
     "nuevo %@": "new %@",
     "actualizado %@": "updated %@",
     "a la papelera del %@": "to the %@'s trash",
@@ -359,7 +353,7 @@ private let traduccionesIngles: [String: String] = [
     "Ver las dos": "Show both",
     "Quedarme con la del %@": "Keep the %@ version",
     "Usar la otra": "Use the other one",
-    "Conectá el hub para elegir.": "Connect the hub to choose.",
+    "Conectá el disco de casa para elegir.": "Connect the home drive to choose.",
     "Las dos versiones están en la carpeta.": "Both versions are in the folder.",
     "Ya lo resolví": "I've resolved it",
 
@@ -376,15 +370,13 @@ private let traduccionesIngles: [String: String] = [
     "Los dos lados tienen lo mismo.": "Both sides have the same files.",
     "Lo que cambies se copia solo.": "Whatever you change is copied automatically.",
     "Cuando lo enchufes, sincronizo solo lo que cambió.": "When you plug it in, I'll sync only what changed.",
-    "El hub no está: cuando vuelvas y lo conectes, te traigo los cambios.": 
-        "The hub isn't here: when you're back and connect it, I'll bring your changes over.",
+    "El disco de casa no está: cuando vuelvas y lo conectes, te traigo los cambios.": "The home drive isn't here: when you're back and connect it, I'll bring your changes over.",
     "Tocá “Sincronizar ahora”: la primera vez copia todo (puede tardar); después, solo lo que cambia.": 
         "Click “Sync now”: the first time copies everything (it may take a while); after that, only what changes.",
     "Elegí qué carpetas se sincronizan en “Qué se sincroniza”.": "Choose which folders sync in “What syncs”.",
-    "Elegís el hub (el disco o la carpeta donde trabajás) y el portátil (el disco que te llevás).": 
-        "Choose the hub (the drive or folder where you work) and the portable drive (the one you take with you).",
-    "Listo: mientras están los dos conectados, cada cambio pasa solo. Con “Me voy” copia lo último y expulsa el disco; al volver, trae lo que cambiaste afuera.": 
-        "That's it: while both are connected, every change goes across automatically. “I'm leaving” copies the latest changes and ejects the drive; when you're back, it brings over what you changed while away.",
+    "Elegís el disco de casa (o la carpeta de la Mac donde trabajás) y el portátil (el disco que te llevás).": "Choose the home drive (the drive or folder where you work) and the portable drive (the one you take with you).",
+    "Listo: mientras están los dos conectados, cada cambio pasa solo. Con “Me voy” copia lo último y expulsa los discos; al volver, trae lo que cambiaste afuera.": 
+        "That's it: while both are connected, every change goes across automatically. “I'm leaving” copies the latest changes and ejects the drives; when you're back, it brings over what you changed while away.",
     "Nada se borra del todo: lo borrado y lo reemplazado va a una papelera de Relevo en cada disco.": 
         "Nothing is ever fully deleted: deleted and replaced files go to a Relevo trash on each drive.",
     "Queda en casa": "Stays at home",

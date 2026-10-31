@@ -1,6 +1,6 @@
 # Relevo user guide
 
-Relevo keeps two places identical: the **hub**, the drive (or folder on your Mac) you work on at home, and the **portable drive**, the one you take with you. While both are connected, every change goes to the other side by itself. Away from home you work on the portable drive as usual and, when you come back, Relevo brings in what you did.
+Relevo keeps two places identical: the **home drive**, the drive (or folder on your Mac) you work on, and the **portable drive**, the one you take with you. While both are connected, every change goes to the other side by itself. Away from home you work on the portable drive as usual and, when you come back, Relevo brings in what you did.
 
 [Leer en español](MANUAL.md) · [Back to the start](../README.md)
 
@@ -32,11 +32,11 @@ The first time you open it, macOS asks for two permissions: **sending notificati
 
 The first time you open Relevo, a three-step setup appears:
 
-1. **Where do you work?** Choose the hub: a drive that stays at home, this Mac, or a folder on this Mac (for example, your Projects folder).
+1. **Where do you work?** Choose the home drive: a drive that stays at home, this Mac, or a folder on this Mac (for example, your Projects folder).
 2. **Which drive do you take with you?** Choose the portable drive. If it doesn't show up, plug it in and click “Look for drives again”. To use the same drive for more than one thing (for example, projects and photos), tick “Save to a folder on the portable drive” and give it a name.
-3. **Almost done.** Relevo offers to give the portable drive the hub's name when you're away (see [Same paths everywhere](#same-paths-everywhere)). Then you choose which folders sync.
+3. **Almost done.** Relevo offers to give the portable drive the home drive's name when you're away (see [Same paths everywhere](#same-paths-everywhere)). Then you choose which folders sync.
 
-That creates a **link**: a hub + portable drive pair. Then click “Sync now”. The first time it copies everything (it can take a while); after that, only what changes.
+That creates a **link**: a home drive + portable drive pair. Then click “Sync now”. The first time it copies everything (it can take a while); after that, only what changes.
 
 ## 3. Day to day
 
@@ -49,19 +49,19 @@ You don't have to do anything. Every change is copied within seconds (the **live
 Two ways:
 
 - **Eject the portable drive**, from Relevo or Finder. Since everything is already copied, that's enough.
-- **“I'm leaving”**, in the menu or on Home. It copies whatever was still pending (seconds) and ejects the portable drive. When it says “Done: you can unplug it now”, unplug it.
+- **“I'm leaving”**, in the menu or on Home. It asks “Leaving?” with the list of drives, copies whatever was still pending (seconds) and ejects **every** drive: the portable drive, the home drive, Time Machine and any other. If something needs your OK or wasn't copied, it ejects none of them and tells you why. When it says “Done: everything is copied and the drives are ejected”, unplug them.
 
-If something is using the drive, Relevo closes background processes by itself. Apps with windows are listed: click “Close and eject” or close them yourself. Claude sessions open on the drive can be reopened from the app later.
+If something is using a drive, Relevo closes background processes by itself. Apps with windows are listed: click “Close and eject” or close them yourself. Claude sessions open on the drive can be reopened from the app later.
 
 ### Away
 
-Work on the portable drive as usual. If you gave it the hub's name, your projects are at the same path and your apps find them without changing anything. The menu says “Working from the portable drive”.
+Work on the portable drive as usual. If you gave it the home drive's name, your projects are at the same path and your apps find them without changing anything. The menu says “Working from the portable drive”.
 
 ### When you come back
 
 Plug in the portable drive. Relevo:
 
-1. Renames the portable drive so it doesn't clash with the hub (nothing is unmounted).
+1. Renames the portable drive so it doesn't clash with the home drive (nothing is unmounted).
 2. Brings in what you did away, checking only what changed.
 
 **Meanwhile, wait before opening your apps.** If it takes more than a few seconds you get the “Wait before opening your apps” notification, Home says “Wait a moment” and the menu bar icon moves. When it's done you get “Done, you can open your apps now”, with what came in.
@@ -70,9 +70,10 @@ If you opened an app on the drive too early (for example, Claude) and it ended u
 
 ### Same paths everywhere
 
-- **Away**, the portable drive has the same name as the hub. Your projects are at `/Volumes/<hub name>/…`, just like at home.
-- **At home** it's called “<name> (portable)”, so two drives never share a name and it doesn't matter which one the Mac mounts first.
-- At home, Relevo can **hide the portable drive from Finder** so you only see one (choose it in Drives). Open it from Relevo's menu with “Show the portable drive in Finder”.
+- **Away**, the portable drive has the same name as the home drive. Your projects are at `/Volumes/<home drive name>/…`, just like at home.
+- **At home** it's called “<name> (portable)”, so two drives never share a name and it doesn't matter which one the Mac mounts first. If you give it another name in Finder at home, Relevo keeps it. Away, though, it always goes back to the home drive's name: otherwise your apps can't find your projects.
+- At home you see both drives in Finder. If you prefer, Relevo can **hide the portable drive from Finder** (choose it in Drives), but it's not recommended: while hidden, macOS doesn't log its changes, so when you come back Relevo has to check every project and it takes longer.
+- **If your drives have different names**, when you link them Relevo offers to give the portable drive the home drive's name (Drives also has “Use “<name>” when away”). That way your apps, for example Claude, find your projects at the same path.
 
 ## 4. The menu bar menu
 
@@ -80,9 +81,12 @@ Click Relevo's icon to see, for each link:
 
 - **The status:** “All up to date”, “Copying 3 of 10…”, “Checking…”, “Needs your OK”, “Paused until 18:00”, etc.
 - **Sync now:** checks what changed and copies it.
-- **I'm leaving (copy and eject).**
 - **Show the portable drive in Finder**, when it's hidden.
 - **Pause:** for 1 hour, until tomorrow or until you resume it. “Resume” turns it back on.
+
+And for all links together:
+
+- **I'm leaving (copy and eject everything).**
 
 At the bottom:
 
@@ -110,11 +114,11 @@ Two parts:
 
 ### Drives
 
-- **Your links:** each link with its hub and portable drive, whether they're connected and their free space. “Add another link” adds another pair (for example, photos on another drive). “Remove link” stops syncing that pair; it doesn't delete anything from any drive.
-- **The name away:** “Use “<name>” when away” gives the portable drive the hub's name.
-- **At home, hide the portable drive from Finder.**
+- **Your links:** each link with its home drive and portable drive, whether they're connected and their free space. “Add another link” adds another pair (for example, photos on another drive). “Remove link” stops syncing that pair; it doesn't delete anything from any drive.
+- **The name away:** “Use “<name>” when away” gives the portable drive the home drive's name.
+- **At home, hide the portable drive from Finder.** Off by default: while hidden, macOS doesn't log its changes and coming back takes longer.
 - **Portable drive encryption** (see [Encrypting the portable drive](#8-encrypting-the-portable-drive)).
-- **Deep check:** compares the contents of every file, not just date and size, to find damaged copies. It's slow because it reads everything. If it finds differences, it offers to copy those files again from the hub.
+- **Deep check:** compares the contents of every file, not just date and size, to find damaged copies. It's slow because it reads everything. If it finds differences, it offers to copy those files again from the home drive.
 - **Eject drives:** every external drive connected, from any link.
 
 ### History
@@ -128,7 +132,7 @@ Two parts:
 
 For people who work with git:
 
-- **Clone from a link** (GitHub, GitLab, Bitbucket…) or from your GitHub list, if the `gh` tool is installed and signed in. Choose whether it goes **to the hub** (Relevo copies it to the portable drive) or **straight to the portable drive** (Relevo copies it to the hub). If the folder already exists, it isn't overwritten. Relevo stores no passwords: it uses your usual credentials.
+- **Clone from a link** (GitHub, GitLab, Bitbucket…) or from your GitHub list, if the `gh` tool is installed and signed in. Choose whether it goes **to the home drive** (Relevo copies it to the portable drive) or **straight to the portable drive** (Relevo copies it to the home drive). If the folder already exists, it isn't overwritten. Relevo stores no passwords: it uses your usual credentials.
 - **Your repositories:** Relevo looks for git folders one level inside each synced folder and shows which ones have uncommitted changes, unpushed commits or are behind.
 - **Check for updates** asks each remote whether there are new commits (`git fetch`); it doesn't change your files. **Pull** brings in the new commits only if nothing needs merging (`git pull --ff-only`).
 - **Details:** open it in Finder or Terminal, see the changes, commit, merge branches or hide it from the list. Hidden ones are still copied.
@@ -142,7 +146,7 @@ If git isn't installed, Relevo tells you how to install it.
   - Live copy.
   - Open at login.
 - **Checks:**
-  - **Daily full check**, overnight or when you're not using the Mac. “Check everything now” runs it right away.
+  - **Daily full check**, overnight or when you're not using the Mac, and another one in the background a minute after each return home. “Check everything now” runs it right away.
   - **Monthly deep check**, with the Mac on power, both drives connected and not in use for a while. It only tells you if it finds something.
   - **Before the Mac sleeps**, it copies whatever is pending (it doesn't eject).
 - **Shortcuts:** turn on the keyboard shortcuts and see the `relevo://` links.
@@ -188,11 +192,11 @@ If you delete (or move) a whole folder on one drive, Relevo **doesn't delete it 
 
 ### The same file changed on both sides
 
-If you changed the same file differently on the hub and on the portable drive, Relevo **keeps both versions**: the newer one keeps its name and the other one sits next to it on both drives, named “name (conflicto hub …)” or “name (conflicto portátil …)” with the date (Spanish for “conflict”). In **History → Two versions** you choose which one stays (“Keep the hub version”, “Use the other one”) or, if you already fixed it by hand, “I've resolved it”.
+If you changed the same file differently on the home drive and on the portable drive, Relevo **keeps both versions**: the newer one keeps its name and the other one sits next to it on both drives, named “name (conflicto hub …)” or “name (conflicto portátil …)” with the date (Spanish for “conflict”). In **History → Two versions** you choose which one stays (“Keep the home drive version”, “Use the other one”) or, if you already fixed it by hand, “I've resolved it”.
 
 ### Repositories with different commits on each drive
 
-If a project has different commits on the hub and on the portable drive, Relevo **doesn't touch its `.git` folder** (so the histories don't mix) and tells you to merge them with git. The rest of the files keep syncing.
+If a project has different commits on the home drive and on the portable drive, Relevo **doesn't touch its `.git` folder** (so the histories don't mix) and tells you to merge them with git. The rest of the files keep syncing.
 
 ### If you unplug the drive mid-copy
 
@@ -209,7 +213,7 @@ If you lose the portable drive, anyone can read what's on it, including your pro
 
 Nothing changes on this Mac: the password stays in the Keychain and Relevo unlocks the drive by itself every time you plug it in. On another Mac it asks for the password. To see it again, “Show password” asks for Touch ID or your Mac's password.
 
-If you lose the password and it isn't anywhere, what's on the portable drive can't be recovered. But the hub has everything: erase the portable drive and Relevo fills it again.
+If you lose the password and it isn't anywhere, what's on the portable drive can't be recovered. But the home drive has everything: erase the portable drive and Relevo fills it again.
 
 ## 9. Shortcuts and links
 
@@ -235,9 +239,11 @@ English aliases work too: `sync`, `leave`, `eject`, `pause?hours=1`, `resume`. �
 
 ## 10. What to do if…
 
-**…the portable drive shows up with the hub's name at home (“The drives got swapped”).** It happens if the portable drive was mounted first. Meanwhile Relevo doesn't sync, so nothing goes to the wrong drive. Click **“Fix it”** on Home: it renames them without unmounting anything.
+**…the portable drive shows up with the home drive's name at home (“The drives got swapped”).** It happens if the portable drive was mounted first. Meanwhile Relevo doesn't sync, so nothing goes to the wrong drive. Click **“Fix it”** on Home: it renames them without unmounting anything.
 
 **…I can't eject the drive.** Relevo shows what's using it. Close it or click “Close and eject”. If macOS doesn't say what's using it, try again in a few seconds.
+
+**…coming back home takes too long.** Make sure the portable drive isn't hidden from Finder (Drives): while hidden, macOS doesn't log its changes and Relevo has to check everything. Relevo writes down every step of the return, with the time, in `~/Library/Logs/Relevo.log`: that shows where the time went.
 
 **…Relevo says “First copy pending”.** Click “Sync now”. The first time it copies everything and can take a while.
 

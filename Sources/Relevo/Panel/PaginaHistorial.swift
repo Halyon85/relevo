@@ -165,7 +165,7 @@ struct PaginaHistorial: View {
     }
 
     static func describir(_ c: Cambio) -> (String, String) {
-        let hacia = c.lado == .portatil ? T("→ portátil") : T("→ hub")
+        let hacia = c.lado == .portatil ? T("→ portátil") : T("→ casa")
         switch c.tipo {
         case .copiado: return ("plus.circle", T("nuevo %@", hacia))
         case .reemplazado: return ("arrow.triangle.2.circlepath", T("actualizado %@", hacia))
@@ -224,7 +224,7 @@ struct PaginaHistorial: View {
                 }
             } else {
                 HStack {
-                    Text(raizHub == nil ? T("Conectá el hub para elegir.") : T("Las dos versiones están en la carpeta.")).font(.system(size: 12)).foregroundStyle(Tema.apagado)
+                    Text(raizHub == nil ? T("Conectá el disco de casa para elegir.") : T("Las dos versiones están en la carpeta.")).font(.system(size: 12)).foregroundStyle(Tema.apagado)
                     Spacer()
                     BotonSecundario(texto: T("Ya lo resolví")) { historial.marcarResuelto(m.id, ruta) }
                 }

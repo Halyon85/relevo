@@ -36,6 +36,15 @@ enum Capturas {
                     nav.pestanaReleva = .carpetas
                 }
             }
+            // El asistente para vincular, paso por paso, con los discos del primer vínculo (si están enchufados).
+            let v = Ajustes.shared.datos.vinculos.first
+            let hub = v.flatMap { Discos.buscar($0.hub.uuid) }.map { Lugar(uuid: $0.uuid, nombre: $0.nombre) }
+            let portatil = v.flatMap { Discos.buscar($0.portatil.uuid) }
+            for paso in [Asistente.Paso.bienvenida, .casa, .portatil, .rutas, .resumen] {
+                guardar(Asistente(gestor: gestor, navegacion: nav, paso: paso, hub: hub, portatil: portatil),
+                        tam: NSSize(width: 640, height: 600), apariencia: apariencia,
+                        en: url.appendingPathComponent("asistente-\(paso)-\(nombre).png"))
+            }
         }
     }
 

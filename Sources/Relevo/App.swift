@@ -59,6 +59,7 @@ final class Delegado: NSObject, NSApplicationDelegate, NSWindowDelegate {
         crearMenu()
         aplicarApariencia()
         Notificar.pedirPermiso()
+        Montajes.shared.arrancar()
         Actualizaciones.arrancar()
         Ajustes.shared.alCambiar = { [weak self] in
             self?.aplicarApariencia()
@@ -75,7 +76,7 @@ final class Delegado: NSObject, NSApplicationDelegate, NSWindowDelegate {
             DistributedNotificationCenter.default().addObserver(forName: Notification.Name("team.halyon.relevo.prueba"),
                                                                 object: nil, queue: .main) { [weak self] n in
                 switch n.object as? String {
-                case "mevoy": self?.gestor.coordinadores.first?.meVoy()
+                case "mevoy": self?.gestor.meVoy(preguntar: false)
                 case "sincronizar": self?.gestor.coordinadores.forEach { $0.sincronizarInteligente(aMano: true) }
                 case "sincronizar-todo": self?.gestor.coordinadores.forEach { $0.sincronizar(aMano: true) }
                 case "revision-completa": self?.gestor.coordinadores.forEach { $0.revisionCompletaSiToca(forzar: true) }
@@ -165,7 +166,6 @@ final class Delegado: NSObject, NSApplicationDelegate, NSWindowDelegate {
             let ocupado = c.estadoVisible == .copiando || c.estadoVisible == .revisando
             m.addItem(accion(ocupado ? T("Sincronizando…") : T("Sincronizar ahora"), #selector(sincronizar(_:)), c,
                              habilitado: c.conectados && !ocupado))
-            m.addItem(accion(T("Me voy (copiar y expulsar)"), #selector(meVoy(_:)), c, habilitado: c.portatil != nil && !(c.portatil?.esEstaMac ?? false)))
             if c.portatil != nil { m.addItem(accion(T("Mostrar el portátil en el Finder"), #selector(mostrarPortatil(_:)), c)) }
             let pausa = NSMenuItem(title: c.vinculo?.pausado == true ? T("Reanudar") : T("Pausar"), action: nil, keyEquivalent: "")
             if c.vinculo?.pausado == true {
@@ -183,6 +183,10 @@ final class Delegado: NSObject, NSApplicationDelegate, NSWindowDelegate {
             m.addItem(.separator())
         }
         let discos = Discos.expulsables()
+        let meVoy = NSMenuItem(title: T("Me voy (copiar y expulsar todo)"), action: discos.isEmpty ? nil : #selector(meVoy), keyEquivalent: "")
+        meVoy.target = self
+        meVoy.isEnabled = !discos.isEmpty
+        m.addItem(meVoy)
         if !discos.isEmpty {
             let expulsar = NSMenuItem(title: T("Expulsar discos"), action: nil, keyEquivalent: "")
             let sub = NSMenu()
@@ -221,7 +225,7 @@ final class Delegado: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private func coordinador(_ it: NSMenuItem) -> Coordinador? { (it.representedObject as? String).flatMap { gestor.coordinador($0) } }
 
     @objc private func sincronizar(_ it: NSMenuItem) { coordinador(it)?.sincronizarInteligente(aMano: true) }
-    @objc private func meVoy(_ it: NSMenuItem) { coordinador(it)?.meVoy(); abrirPanel(.inicio) }
+    @objc private func meVoy() { abrirPanel(.inicio); gestor.meVoy() }
     @objc private func mostrarPortatil(_ it: NSMenuItem) { coordinador(it)?.mostrarPortatil() }
     @objc private func pausar(_ it: NSMenuItem) { coordinador(it)?.pausar(hasta: Date().addingTimeInterval(Double(it.tag))) }
     @objc private func reanudar(_ it: NSMenuItem) { coordinador(it)?.pausar(hasta: nil) }
@@ -238,7 +242,7 @@ final class Delegado: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private func hacer(_ accion: Atajos.Accion) {
         switch accion {
         case .sincronizar: gestor.coordinadores.forEach { $0.sincronizarInteligente(aMano: true) }
-        case .meVoy: gestor.coordinadores.filter { $0.portatil != nil }.forEach { $0.meVoy() }
+        case .meVoy: abrirPanel(.inicio); gestor.meVoy()
         case .expulsar: gestor.expulsar(Discos.expulsables())
         }
     }
@@ -252,7 +256,9 @@ final class Delegado: NSObject, NSApplicationDelegate, NSWindowDelegate {
         switch url.host ?? "" {
         case "sincronizar", "sync": gestor.coordinadores.forEach { $0.sincronizarInteligente(aMano: false) }
         case "mevoy", "leave":
-            if confirmarEnlace(T("¿Copiar lo último y expulsar el portátil?")) { hacer(.meVoy) }
+            // "Me voy" ya pregunta siempre: acá solo se agrega que lo pidió un enlace.
+            abrirPanel(.inicio)
+            gestor.meVoy(desdeEnlace: true)
         case "expulsar", "eject":
             if confirmarEnlace(T("¿Expulsar todos los discos externos?")) { hacer(.expulsar) }
         case "pausar", "pause":

@@ -26,6 +26,7 @@ struct PaginaInicio: View {
             }
             ForEach(gestor.bloqueos) { b in TarjetaBloqueo(bloqueo: b, gestor: gestor) }
             ForEach(gestor.coordinadores) { c in TarjetaVinculo(coordinador: c, navegacion: navegacion, unico: gestor.coordinadores.count == 1) }
+            ForEach(gestor.coordinadores) { c in TarjetaComoSeUsa(coordinador: c) }
             if !historial.conflictosAbiertos.isEmpty {
                 Tarjeta {
                     Fila(titulo: T("%ld archivo(s) con dos versiones", historial.conflictosAbiertos.count),
@@ -78,7 +79,7 @@ struct PaginaInicio: View {
                 : T("Copiando solo lo que cambió.")
         case .alDia: T("Los dos lados tienen lo mismo.") + (Ajustes.shared.datos.enVivo ? " " + T("Lo que cambies se copia solo.") : "")
         case .faltaPortatil: T("Cuando lo enchufes, sincronizo solo lo que cambió.")
-        case .faltaHub: T("El hub no está: cuando vuelvas y lo conectes, te traigo los cambios.")
+        case .faltaHub: T("El disco de casa no está: cuando vuelvas y lo conectes, te traigo los cambios.")
         case .primeraVez: T("Tocá “Sincronizar ahora”: la primera vez copia todo (puede tardar); después, solo lo que cambia.")
         case .sinCarpetas: T("Elegí qué carpetas se sincronizan en “Qué se sincroniza”.")
         default: ""
@@ -91,9 +92,9 @@ struct PaginaInicio: View {
                 Logo(tam: 64)
                 VStack(alignment: .leading, spacing: 8) {
                     Text(T("Cómo funciona")).font(.titulo(16, .semibold)).foregroundStyle(Tema.titulo)
-                    paso("1", T("Elegís el hub (el disco o la carpeta donde trabajás) y el portátil (el disco que te llevás)."))
+                    paso("1", T("Elegís el disco de casa (o la carpeta de la Mac donde trabajás) y el portátil (el disco que te llevás)."))
                     paso("2", T("Elegís qué carpetas se sincronizan. Lo que se arma solo al compilar (como .next o DerivedData) no se copia."))
-                    paso("3", T("Listo: mientras están los dos conectados, cada cambio pasa solo. Con “Me voy” copia lo último y expulsa el disco; al volver, trae lo que cambiaste afuera."))
+                    paso("3", T("Listo: mientras están los dos conectados, cada cambio pasa solo. Con “Me voy” copia lo último y expulsa los discos; al volver, trae lo que cambiaste afuera."))
                 }
             }
             Text(T("Nada se borra del todo: lo borrado y lo reemplazado va a una papelera de Relevo en cada disco."))
@@ -172,7 +173,7 @@ struct TarjetaVinculo: View {
                 DiscoAbrible(habilitado: coordinador.raizHub != nil, abrir: {
                     if let r = coordinador.raizHub { NSWorkspace.shared.open(URL(fileURLWithPath: r)) }
                 }) {
-                    disco(titulo: T("Hub"), sub: T("Queda en casa"), conectado: coordinador.raizHub != nil, lugar: v?.hub, libre: coordinador.hub?.libre)
+                    disco(titulo: T("Disco de casa"), sub: T("Donde trabajás"), conectado: coordinador.raizHub != nil, lugar: v?.hub, libre: coordinador.hub?.libre)
                 }
                 flechas
                 DiscoAbrible(habilitado: coordinador.portatil != nil, abrir: { coordinador.mostrarPortatil() }) {
@@ -234,9 +235,9 @@ struct TarjetaVinculo: View {
             BotonSecundario(texto: T("Frenar"), icono: "pause.fill") { coordinador.cancelar() }
         }
         if !(coordinador.portatil?.esEstaMac ?? false) {
-            BotonPrimario(texto: T("Me voy")) { coordinador.meVoy() }
+            BotonPrimario(texto: T("Me voy")) { Gestor.actual?.meVoy() }
                 .disabled(coordinador.portatil == nil).opacity(coordinador.portatil == nil ? 0.45 : 1)
-                .help(T("Copia lo último y expulsa el portátil para que lo desenchufes tranquilo."))
+                .help(T("Copia lo último y expulsa todos los discos (el portátil, el disco de casa, Time Machine…) para que te vayas tranquilo."))
         }
     }
 
@@ -307,7 +308,7 @@ struct TarjetaVinculo: View {
 
     private var alReves: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(T("El portátil se montó primero y se quedó con el nombre del hub, así que lo que abras iría al disco equivocado. Mientras tanto no sincronizo. “Acomodar” les cambia el nombre (no desmonta nada ni hace falta cerrar nada)."))
+            Text(T("El portátil se montó primero y se quedó con el nombre del disco de casa, así que lo que abras iría al disco equivocado. Mientras tanto no sincronizo. “Acomodar” les cambia el nombre (no desmonta nada ni hace falta cerrar nada)."))
                 .font(.system(size: 13)).foregroundStyle(Tema.subtitulo).fixedSize(horizontal: false, vertical: true)
             BotonPrimario(texto: T("Acomodar")) { coordinador.acomodar() }
         }
@@ -457,6 +458,46 @@ struct TarjetaBloqueo: View {
         } message: {
             Text(T("Se van a cerrar: %@. Lo que estén haciendo se corta; lo que ya guardaron queda guardado.",
                    cerrables.map(\.app).joined(separator: ", ")))
+        }
+    }
+}
+
+/// Después de la primera copia de un vínculo nuevo: cómo se usa en el día a día, una sola vez (con "Entendido" no
+/// vuelve). Solo para vínculos creados hace menos de una semana: a quien ya lo usa no se le aparece de golpe.
+struct TarjetaComoSeUsa: View {
+    @ObservedObject var coordinador: Coordinador
+    @Estado private var vista = false
+
+    private var clave: String { "guia-uso-\(coordinador.id)" }
+    private var mostrar: Bool {
+        guard !vista, coordinador.ultima != nil, !UserDefaults.standard.bool(forKey: clave),
+              let alta = UserDefaults.standard.object(forKey: "alta-\(coordinador.id)") as? Date else { return false }
+        return Date().timeIntervalSince(alta) < 7 * 86400
+    }
+
+    var body: some View {
+        if mostrar {
+            Tarjeta {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(T("Listo, ya está todo copiado. Así se usa:")).font(.titulo(15, .semibold)).foregroundStyle(Tema.titulo)
+                    renglon("arrow.left.arrow.right", T("Con los dos discos enchufados no hacés nada: cada cambio pasa solo."))
+                    renglon("figure.walk", T("Cuando te vas, tocá “Me voy” (en el menú de Relevo o acá): copia lo último y expulsa los discos."))
+                    renglon("house", T("Cuando volvés, enchufá el portátil y esperá el aviso “Listo” antes de abrir tus apps."))
+                    BotonSecundario(texto: T("Entendido"), icono: "checkmark") {
+                        UserDefaults.standard.set(true, forKey: clave)
+                        withAnimation(Tema.expo) { vista = true }
+                    }
+                }
+                .padding(18)
+            }
+            .transition(.opacity)
+        }
+    }
+
+    private func renglon(_ icono: String, _ texto: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: icono).font(.system(size: 14)).foregroundStyle(Tema.acento).frame(width: 20)
+            Text(texto).font(.system(size: 13)).foregroundStyle(Tema.subtitulo).fixedSize(horizontal: false, vertical: true)
         }
     }
 }

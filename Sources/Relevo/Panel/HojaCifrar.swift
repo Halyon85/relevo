@@ -114,7 +114,7 @@ struct HojaCifrar: View {
             Tarjeta {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(T("Dónde guardarla")).font(.titulo(13)).foregroundStyle(Tema.titulo)
-                    Text(T("• Queda sola en el llavero de esta Mac (por eso acá se abre sin pedirla).\n• Guardala también en la app Contraseñas (botón “+”, nombre: “Disco %@”) o anotala en un papel que no viaje con el disco.\n• Si se pierde la clave y no está en ningún lado, lo del disco no se puede recuperar. Pero tranqui: el hub tiene todo, así que se borra el portátil y Relevo lo vuelve a llenar.", volumen.nombre))
+                    Text(T("• Queda sola en el llavero de esta Mac (por eso acá se abre sin pedirla).\n• Guardala también en la app Contraseñas (botón “+”, nombre: “Disco %@”) o anotala en un papel que no viaje con el disco.\n• Si se pierde la clave y no está en ningún lado, lo del disco no se puede recuperar. Pero tranqui: el disco de casa tiene todo, así que se borra el portátil y Relevo lo vuelve a llenar.", volumen.nombre))
                         .font(.system(size: 12)).foregroundStyle(Tema.subtitulo).fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(14)

@@ -45,7 +45,7 @@ struct PaginaExcluidas: View {
             VStack(alignment: .leading, spacing: 6) {
                 BotonPrimario(texto: T("Agregar carpeta o archivo…")) { elegir(c, v) }
                     .disabled(c.raizHub == nil).opacity(c.raizHub == nil ? 0.5 : 1)
-                Text(avisoElegir ?? (c.raizHub == nil ? T("Conectá el hub para elegir.")
+                Text(avisoElegir ?? (c.raizHub == nil ? T("Conectá el disco de casa para elegir.")
                                                      : T("Se abre el Finder en tus carpetas: elegí lo que no querés sincronizar (por ejemplo, una carpeta de borradores adentro de un proyecto).")))
                     .font(.system(size: 11)).foregroundStyle(avisoElegir == nil ? Tema.apagado : Tema.acento)
                     .fixedSize(horizontal: false, vertical: true)

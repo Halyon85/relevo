@@ -62,7 +62,7 @@ struct DestinoClon: Identifiable, Hashable {
 enum LadoClon: String, Identifiable, Hashable, CaseIterable {
     case hub, portatil
     var id: String { rawValue }
-    var nombre: String { self == .hub ? T("Hub") : T("Portátil") }
+    var nombre: String { self == .hub ? T("Disco de casa") : T("Portátil") }
 }
 
 /// Un archivo con cambios sin commit, dicho en simple.
@@ -564,7 +564,7 @@ final class Repos: ObservableObject {
         guard let c = gestor.coordinador(destino.vinculoID) else { return }
         let raiz = lado == .hub ? c.raizHub : c.raizPortatil
         guard let raiz else {
-            novedad = Novedad(texto: lado == .hub ? T("Conectá el hub para clonar ahí.") : T("Conectá el portátil para clonar ahí."), esError: true)
+            novedad = Novedad(texto: lado == .hub ? T("Conectá el disco de casa para clonar ahí.") : T("Conectá el portátil para clonar ahí."), esError: true)
             return
         }
         let final = raiz + "/" + destino.base + "/" + nombre
@@ -598,8 +598,8 @@ final class Repos: ObservableObject {
             }
             self.enPrincipal {
                 self.trabajando[id] = nil
-                self.novedad = Novedad(texto: lado == .hub ? T("%@ quedó en el hub, en %@.", nombre, destino.base)
-                                                           : T("%@ quedó en el portátil, en %@. Relevo lo copia al hub.", nombre, destino.base),
+                self.novedad = Novedad(texto: lado == .hub ? T("%@ quedó en el disco de casa, en %@.", nombre, destino.base)
+                                                           : T("%@ quedó en el portátil, en %@. Relevo lo copia al disco de casa.", nombre, destino.base),
                                        esError: false)
                 // Que Relevo lo releve ya, sin esperar.
                 c.sincronizar([par], aMano: true)

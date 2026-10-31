@@ -62,7 +62,7 @@ struct PaginaCarpetas: View {
                 resumen(c, v, raiz: raiz)
                 Tarjeta(titulo: T("Todas tus carpetas")) {
                     if lista.isEmpty {
-                        Fila(titulo: T("No hay carpetas"), detalle: T("Creá carpetas en el hub y aparecen acá."), divisor: false) { EmptyView() }
+                        Fila(titulo: T("No hay carpetas"), detalle: T("Creá carpetas en el disco de casa y aparecen acá."), divisor: false) { EmptyView() }
                     }
                     ForEach(Array(lista.enumerated()), id: \.element) { i, nombre in
                         filaRaiz(nombre, raiz: raiz, v: v, ultima: i == lista.count - 1)
@@ -71,7 +71,7 @@ struct PaginaCarpetas: View {
                 .onAppear { tamanos.pedir(lista.map { raiz + "/" + $0 }) }
             } else {
                 Tarjeta {
-                    Fila(titulo: T("Conectá el hub para elegir"), detalle: T("Las carpetas se leen del hub (%@).", v.hub.descripcion), divisor: false) { EmptyView() }
+                    Fila(titulo: T("Conectá el disco de casa para elegir"), detalle: T("Las carpetas se leen del disco de casa (%@).", v.hub.descripcion), divisor: false) { EmptyView() }
                 }
             }
         } else {
@@ -188,6 +188,12 @@ struct PaginaCarpetas: View {
                         .font(.titulo(14, .semibold)).foregroundStyle(Tema.titulo)
                     Spacer()
                     if let libre { Text(T("%@ libres en el portátil", Formato.bytes(libre))).font(.system(size: 12)).foregroundStyle(Tema.apagado) }
+                }
+                // Antes de la primera copia: si lo elegido no entra en el portátil, se dice ahora (y no a mitad de copia).
+                if let libre, c.ultima == nil, completo, bytes > libre {
+                    Label(T("No entra: elegiste %@ y en el portátil hay %@ libres. Destildá algo para que entre.", Formato.bytes(bytes), Formato.bytes(libre)),
+                          systemImage: "exclamationmark.triangle.fill")
+                        .font(.system(size: 12, weight: .medium)).foregroundStyle(Tema.error).fixedSize(horizontal: false, vertical: true)
                 }
                 if let libre, let total = c.portatil?.capacidad, total > 0 {
                     GeometryReader { g in

@@ -27,7 +27,7 @@ struct QueEsUnVinculo: View {
             Image(systemName: "arrow.left.arrow.right.circle.fill").font(.system(size: 20)).foregroundStyle(Tema.acento)
             VStack(alignment: .leading, spacing: 4) {
                 Text(T("¿Qué es un vínculo?")).font(.titulo(14)).foregroundStyle(Tema.titulo)
-                Text(T("Un par de discos que Relevo mantiene iguales: el hub (el disco o la carpeta donde trabajás en casa) y el portátil (el disco que te llevás). Podés tener más de uno: por ejemplo, proyectos en un disco y fotos en otro. Qué carpetas pasan de uno al otro se elige en “Qué se sincroniza”."))
+                Text(T("Un par de discos que Relevo mantiene iguales: el disco de casa (o la carpeta de la Mac donde trabajás) y el portátil (el disco que te llevás). Podés tener más de uno: por ejemplo, proyectos en un disco y fotos en otro. Qué carpetas pasan de uno al otro se elige en “Qué se sincroniza”."))
                     .font(.system(size: 12)).foregroundStyle(Tema.subtitulo).fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -50,7 +50,7 @@ struct TarjetaDiscos: View {
             VStack(alignment: .leading, spacing: 12) {
                 Tarjeta(titulo: numero.map { T("Vínculo %ld", $0) }) {
                     HStack(alignment: .top, spacing: 0) {
-                        LadoDisco(rol: T("Hub"), ayuda: nil, lugar: v.hub, volumen: coordinador.hub,
+                        LadoDisco(rol: T("Disco de casa"), ayuda: nil, lugar: v.hub, volumen: coordinador.hub,
                                   conectado: coordinador.raizHub != nil) {
                             if let r = coordinador.raizHub { NSWorkspace.shared.open(URL(fileURLWithPath: r)) }
                         }
@@ -62,9 +62,15 @@ struct TarjetaDiscos: View {
                     }
                     .padding(.horizontal, 12).padding(.vertical, 14)
                     Rectangle().fill(Tema.bordeSuave).frame(height: 1).padding(.leading, 16)
+                    if let afuera = v.nombreAfuera, Vinculo.discosEnteros(v.hub, v.portatil) {
+                        Fila(titulo: T("Nombres del portátil"),
+                             detalle: T("Afuera se llama “%@”, como el disco de casa: así tus apps encuentran los proyectos en la misma ubicación. En casa se llama “%@”; si se lo cambiás en el Finder, lo respeto.", afuera, v.nombreEnCasa ?? Discos.nombreEnCasa(afuera))) {
+                            EmptyView()
+                        }
+                    }
                     if !v.portatil.esEstaMac {
                         Fila(titulo: T("En casa, ocultar el portátil del Finder"),
-                             detalle: T("Con el hub conectado, el portátil no aparece en la barra lateral del Finder (si se llaman igual, ves uno solo). Lo abrís con “Abrir”, acá arriba, o desde el menú de Relevo.")) {
+                             detalle: T("Con el disco de casa conectado, el portátil no aparece en la barra lateral del Finder. Ojo: oculto, macOS no anota sus cambios, así que al volver de afuera reviso todos los proyectos y tarda más.")) {
                             Toggle("", isOn: Binding(get: { v.ocultarEnCasa }, set: { n in ajustes.cambiar(v.id) { $0.ocultarEnCasa = n } }))
                                 .toggleStyle(.switch).labelsHidden()
                         }
@@ -111,7 +117,7 @@ struct TarjetaDiscos: View {
         }
         if let h = coordinador.hub, coordinador.portatil != nil, Vinculo.discosEnteros(v.hub, v.portatil), v.nombreAfuera == nil {
             Aviso(icono: "lightbulb.fill", color: Tema.acento,
-                  texto: T("Si afuera el portátil se llama como el hub (“%@”), tus proyectos quedan en la misma ubicación (/Volumes/%@/…) y tus apps los encuentran sin cambiar nada. En casa se llama “%@”, para no confundirse con el hub.", h.nombre, h.nombre, Discos.nombreEnCasa(h.nombre))) {
+                  texto: T("Si afuera el portátil se llama como el disco de casa (“%@”), tus proyectos quedan en la misma ubicación (/Volumes/%@/…) y tus apps los encuentran sin cambiar nada. En casa se llama “%@”, para no confundirse con el disco de casa.", h.nombre, h.nombre, Discos.nombreEnCasa(h.nombre))) {
                 BotonSecundario(texto: T("Usar “%@” afuera", h.nombre), icono: "pencil") {
                     ajustes.cambiar(v.id) { $0.nombreAfuera = h.nombre; $0.portatil.nombre = h.nombre }
                     coordinador.discosCambiaron()
@@ -205,7 +211,7 @@ struct VistaRevision: View {
                     Text("\(d.carpeta)/\(d.ruta)").font(.system(size: 12, design: .monospaced)).foregroundStyle(Tema.subtitulo)
                 }
                 HStack {
-                    BotonPrimario(texto: T("Copiarlos de nuevo desde el hub")) { coordinador.repararDesdeHub() }
+                    BotonPrimario(texto: T("Copiarlos de nuevo desde el disco de casa")) { coordinador.repararDesdeHub() }
                     BotonSecundario(texto: T("Ahora no")) { coordinador.cerrarRevision() }
                 }
             }

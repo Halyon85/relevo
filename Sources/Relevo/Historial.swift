@@ -30,7 +30,7 @@ struct Movimiento: Codable, Identifiable, Equatable {
     var texto: String {
         var partes: [String] = []
         if haciaPortatil > 0 { partes.append(T("%ld al portátil", haciaPortatil)) }
-        if haciaHub > 0 { partes.append(T("%ld al hub", haciaHub)) }
+        if haciaHub > 0 { partes.append(T("%ld a casa", haciaHub)) }
         if aPapelera > 0 { partes.append(T("%ld a la papelera", aPapelera)) }
         if !conflictos.isEmpty { partes.append(T("%ld con dos versiones", conflictos.count)) }
         if partes.isEmpty { partes.append(T("revisado")) }

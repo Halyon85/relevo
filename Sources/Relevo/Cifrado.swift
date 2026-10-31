@@ -37,7 +37,7 @@ enum ErrorCifrado: Error, Equatable {
     var mensaje: String {
         switch self {
         case .noEsAPFS(let formato):
-            return T("Solo se pueden cifrar discos en formato APFS (este es %@). Para cambiarlo hay que borrarlo con la Utilidad de Discos; el hub tiene todo, así que después se vuelve a copiar.",
+            return T("Solo se pueden cifrar discos en formato APFS (este es %@). Para cambiarlo hay que borrarlo con la Utilidad de Discos; el disco de casa tiene todo, así que después se vuelve a copiar.",
                      formato.isEmpty ? T("otro formato") : formato)
         case .noEsExterno: return T("Solo se cifran discos externos.")
         case .yaCifrado: return T("Este disco ya está cifrado.")

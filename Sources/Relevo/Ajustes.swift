@@ -64,8 +64,9 @@ struct Vinculo: Codable, Equatable, Identifiable {
     /// Lo elegido con el Finder en "Lo que nunca se sincroniza", tildado o no (la lista que se muestra ahí). Que esté
     /// tildado es que esté en `omitidas`.
     var elegidasNunca: [String] = []
-    /// En casa (con el hub conectado), montar el portátil oculto: en el Finder se ve uno solo si se llaman igual.
-    var ocultarEnCasa = true
+    /// En casa (con el hub conectado), montar el portátil oculto del Finder. Apagado por defecto: oculto, macOS no anota
+    /// sus cambios (FSEvents), así que al volver de afuera hay que revisar todos los proyectos (ver `Historia`).
+    var ocultarEnCasa = false
     /// Sin copias automáticas hasta esta fecha.
     var pausadoHasta: Date?
     /// El nombre que lleva el portátil cuando está solo (afuera): el mismo del hub, así las rutas son iguales.
@@ -96,7 +97,7 @@ struct Vinculo: Codable, Equatable, Identifiable {
         elegidasNunca = try c.decodeIfPresent([String].self, forKey: .elegidasNunca) ?? omitidas.filter { o in
             !carpetas.contains { $0.hasSuffix("/*") && o.padreDeRuta == String($0.dropLast(2)) }
         }
-        ocultarEnCasa = try c.decodeIfPresent(Bool.self, forKey: .ocultarEnCasa) ?? true
+        ocultarEnCasa = try c.decodeIfPresent(Bool.self, forKey: .ocultarEnCasa) ?? false
         pausadoHasta = try c.decodeIfPresent(Date.self, forKey: .pausadoHasta)
         // Vínculos de antes: si los dos discos enteros se llamaban igual, es que se quería el mismo nombre afuera.
         nombreEnCasa = try c.decodeIfPresent(String.self, forKey: .nombreEnCasa)
@@ -175,7 +176,7 @@ struct DatosAjustes: Codable, Equatable {
             nuevo.id = "\(h)-\(p)"
             nuevo.carpetas = try v.decodeIfPresent([String].self, forKey: .carpetas) ?? []
             nuevo.omitidas = try v.decodeIfPresent([String].self, forKey: .omitidas) ?? []
-            nuevo.ocultarEnCasa = try v.decodeIfPresent(Bool.self, forKey: .ocultarEnCasa) ?? true
+            nuevo.ocultarEnCasa = try v.decodeIfPresent(Bool.self, forKey: .ocultarEnCasa) ?? false
             vinculos = [nuevo]
         }
     }
@@ -219,6 +220,13 @@ final class Ajustes: ObservableObject {
                 try? FileManager.default.copyItem(at: Self.archivo, to: copia)
             }
             datos = DatosAjustes()
+        }
+        // 31/10/2026: ocultar el portátil en casa venía prendido y hacía que cada vuelta revisara todo (oculto, macOS no
+        // anota sus cambios). Se apaga una vez en los vínculos que ya existían; después cada uno elige.
+        // (En las pruebas no: cada una elige si lo quiere oculto.)
+        if !Notificar.prueba, !UserDefaults.standard.bool(forKey: "sin-ocultar-en-casa") {
+            for i in datos.vinculos.indices { datos.vinculos[i].ocultarEnCasa = false }
+            UserDefaults.standard.set(true, forKey: "sin-ocultar-en-casa")
         }
         guardar()   // deja el archivo en el formato nuevo
     }

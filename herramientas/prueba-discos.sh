@@ -104,15 +104,22 @@ hdiutil attach -quiet "$TMP/hubA.sparseimage"
 esperar 20 '[ "$(montado_en "$UH")" = "/Volumes/SGAcomodo" ] && [ "$(montado_en "$UP")" = "/Volumes/SGAcomodo (portátil)" ]' \
   && ok "Al volver, cada uno con su nombre otra vez" || mal "Al volver: hub '$(montado_en "$UH")', portátil '$(montado_en "$UP")'"
 
-# "Me voy": copia, le pone al portátil el nombre del hub y lo expulsa (así afuera queda bien aunque Relevo no esté).
+# "Me voy": copia, le pone al portátil el nombre del hub y expulsa todos los discos (el hub también: te vas).
 orden mevoy
 esperar 90 '[ -z "$(montado_en "$UP")" ]' && ok "Me voy: expulsó el portátil" || mal "Me voy no expulsó el portátil ($(grep PANTALLA "$LOG" | tail -1))"
+esperar 30 '[ -z "$(montado_en "$UH")" ]' && ok "Me voy: expulsó también el hub" || mal "Me voy dejó el hub montado"
+hdiutil attach -quiet "$TMP/hubA.sparseimage"
 hdiutil attach -quiet -nomount "$TMP/portA.sparseimage"
 NOMBRE_IDO=$(diskutil info -plist "$UP" 2>/dev/null | plutil -extract VolumeName raw - 2>/dev/null)
 [ "$NOMBRE_IDO" = "SGAcomodo" ] && ok "Se fue llamándose como el hub (“SGAcomodo”)" || mal "Se fue llamándose “$NOMBRE_IDO”"
 diskutil mount "$UP" >/dev/null 2>&1
 esperar 20 '[ "$(montado_en "$UP")" = "/Volumes/SGAcomodo (portátil)" ] && [ "$(montado_en "$UH")" = "/Volumes/SGAcomodo" ]' \
   && ok "Enchufado de nuevo en casa, vuelve a “SGAcomodo (portátil)”" || mal "En casa quedó '$(montado_en "$UP")'"
+# En casa le cambiás el nombre al portátil en el Finder: Relevo lo respeta (afuera igual va con el nombre del hub).
+diskutil rename "$UP" "SGMiPortatil" >/dev/null 2>&1
+sleep 8
+[ "$(montado_en "$UP")" = "/Volumes/SGMiPortatil" ] && ok "En casa respeta el nombre que le pusiste al portátil" \
+  || mal "En casa no respetó el nombre: quedó '$(montado_en "$UP")'"
 
 # Sin "Me voy": se expulsa el portátil como en el Finder y se enchufa solo (afuera). Con Relevo ya andando, toma el
 # nombre del hub en segundos.

@@ -27,7 +27,7 @@ struct PaginaRepos: View {
 
     var body: some View {
         TituloPagina(titulo: T("Repositorios"),
-                     subtitulo: T("Bajá tus repositorios al hub o directo al portátil con un clic, y fijate cuáles tienen algo pendiente."))
+                     subtitulo: T("Bajá tus repositorios al disco de casa o directo al portátil con un clic, y fijate cuáles tienen algo pendiente."))
             .onAppear { repos.cargar(gestor) }
 
         if let n = repos.novedad { novedad(n) }
@@ -155,7 +155,7 @@ struct PaginaRepos: View {
         } else {
             Segmentos(valor: $lado, opciones: LadoClon.allCases) { $0.nombre }
                 .fixedSize()
-                .help(T("Dónde queda la copia: en el hub o directo en el portátil."))
+                .help(T("Dónde queda la copia: en el disco de casa o directo en el portátil."))
             if let elegido {
                 menuDestino(destinos, elegido)
             } else {
@@ -169,8 +169,8 @@ struct PaginaRepos: View {
 
     private func textoAyudaClon(_ d: DestinoClon?) -> String {
         guard d != nil else { return T("Elegí primero qué se sincroniza (por ejemplo, Proyectos) y los repos se clonan ahí.") }
-        var t = lado == .portatil ? T("Queda en la misma carpeta del portátil y después Relevo lo copia al hub.")
-                                  : T("Queda en el hub y Relevo lo copia al portátil.")
+        var t = lado == .portatil ? T("Queda en la misma carpeta del portátil y después Relevo lo copia al disco de casa.")
+                                  : T("Queda en el disco de casa y Relevo lo copia al portátil.")
         t += " " + T("Si la carpeta ya existe, no se pisa. Usa tus credenciales de siempre (gh o el llavero de git); Relevo no guarda ninguna clave.")
         return t
     }
@@ -273,7 +273,7 @@ struct PaginaRepos: View {
         let filtrando = filtro != .todos || !busqueda.trimmingCharacters(in: .whitespaces).isEmpty
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                Text(T("En el hub")).font(.titulo(13)).foregroundStyle(Tema.apagado).padding(.leading, 4)
+                Text(T("En el disco de casa")).font(.titulo(13)).foregroundStyle(Tema.apagado).padding(.leading, 4)
                 if repos.revisandoLocales { ProgressView().controlSize(.mini) }
                 Spacer()
                 if let u = repos.ultimaBusqueda {
@@ -286,7 +286,7 @@ struct PaginaRepos: View {
                         .help(T("Pregunta a cada remoto si hay commits nuevos (git fetch). No cambia tus archivos."))
                 }
             }
-            Text(T("Relevo busca carpetas con git un nivel adentro de cada carpeta que se sincroniza en el hub (por ejemplo, Proyectos/…)."))
+            Text(T("Relevo busca carpetas con git un nivel adentro de cada carpeta que se sincroniza en el disco de casa (por ejemplo, Proyectos/…)."))
                 .font(.system(size: 12)).foregroundStyle(Tema.apagado).padding(.horizontal, 4)
                 .fixedSize(horizontal: false, vertical: true)
             let filtros = Segmentos(valor: $filtro, opciones: FiltroRepos.allCases) { f in
@@ -294,12 +294,12 @@ struct PaginaRepos: View {
             }
             .fixedSize()
             ViewThatFits(in: .horizontal) {
-                HStack(spacing: 10) { filtros; buscador($busqueda, T("Buscar en el hub")).frame(minWidth: 160) }
-                VStack(alignment: .leading, spacing: 8) { filtros; buscador($busqueda, T("Buscar en el hub")) }
+                HStack(spacing: 10) { filtros; buscador($busqueda, T("Buscar en el disco de casa")).frame(minWidth: 160) }
+                VStack(alignment: .leading, spacing: 8) { filtros; buscador($busqueda, T("Buscar en el disco de casa")) }
             }
             Tarjeta {
                 if gs.isEmpty {
-                    Fila(titulo: visibles.isEmpty ? T("No hay repositorios en el hub") : (filtro == .todos ? T("Ninguno coincide") : T("Nada pendiente acá")),
+                    Fila(titulo: visibles.isEmpty ? T("No hay repositorios en el disco de casa") : (filtro == .todos ? T("Ninguno coincide") : T("Nada pendiente acá")),
                          detalle: nil,
                          divisor: false) { EmptyView() }
                 }
@@ -496,7 +496,7 @@ struct PaginaRepos: View {
         if let d = r.description, !d.isEmpty { partes.append(d) }
         return Fila(titulo: r.name, detalle: partes.isEmpty ? nil : partes.joined(separator: " · "), divisor: divisor) {
             if let l = enHub {
-                Text(T("Ya está en el hub")).font(.system(size: 12)).foregroundStyle(Tema.exito).fixedSize()
+                Text(T("Ya está en el disco de casa")).font(.system(size: 12)).foregroundStyle(Tema.exito).fixedSize()
                 BotonSecundario(texto: T("Abrir"), icono: "folder") { Repos.abrirEnFinder(l.ruta) }
                     .help(T("Abrir en el Finder"))
             } else if let t = repos.trabajando[r.id] {
@@ -517,9 +517,9 @@ struct PaginaRepos: View {
         let d = repos.destino(gestor)
         let c = d.flatMap { gestor.coordinador($0.vinculoID) }
         return Menu {
-            Button(T("Clonar en el hub")) { accion(.hub) }
+            Button(T("Clonar en el disco de casa")) { accion(.hub) }
                 .disabled(c?.raizHub == nil)
-            Button(T("Clonar en el portátil (después Relevo lo copia al hub)")) { accion(.portatil) }
+            Button(T("Clonar en el portátil (después Relevo lo copia al disco de casa)")) { accion(.portatil) }
                 .disabled(c?.raizPortatil == nil)
         } label: {
             HStack(spacing: 6) {

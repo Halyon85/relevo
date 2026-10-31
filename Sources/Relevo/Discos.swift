@@ -34,8 +34,12 @@ enum Discos {
         // Sin `.skipHiddenVolumes`: en casa el portátil se monta oculto y igual hay que encontrarlo.
         let urls = FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: claves, options: []) ?? []
         return urls.compactMap { u in
+            // Solo discos de verdad, montados en /Volumes/<nombre>. Las copias instantáneas de Time Machine se montan más
+            // adentro (/Volumes/com.apple.TimeMachine.localsnapshots/…/Data, /Volumes/.timemachine/…) mientras hace
+            // la copia de seguridad, y aparecían en "Expulsar discos" como "Data@snap-…" (31/10/2026).
             guard let v = try? u.resourceValues(forKeys: Set(claves)), let uuid = v.volumeUUIDString,
-                  v.volumeIsRootFileSystem != true, u.path.hasPrefix("/Volumes/") else { return nil }
+                  v.volumeIsRootFileSystem != true, u.path.hasPrefix("/Volumes/"), u.pathComponents.count == 3,
+                  !u.lastPathComponent.hasPrefix(".") else { return nil }
             return Volumen(url: u, nombre: v.volumeName ?? u.lastPathComponent, uuid: uuid,
                            externo: v.volumeIsInternal != true,
                            capacidad: Int64(v.volumeTotalCapacity ?? 0), libre: Int64(v.volumeAvailableCapacity ?? 0),
@@ -140,6 +144,23 @@ enum Discos {
         return info?["DeviceIdentifier"] as? String
     }
 
+    /// Dónde están montados los discos de Time Machine (sus copias de seguridad). No se ofrecen para vincular: Relevo
+    /// escribiría entre las copias de seguridad. Lo usa el asistente. Tarda unos milisegundos (tmutil).
+    static func deTimeMachine() -> Set<String> {
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/usr/bin/tmutil")
+        p.arguments = ["destinationinfo", "-X"]
+        let tubo = Pipe()
+        p.standardOutput = tubo
+        p.standardError = FileHandle.nullDevice
+        guard (try? p.run()) != nil else { return [] }
+        let datos = tubo.fileHandleForReading.readDataToEndOfFile()
+        p.waitUntilExit()
+        let info = (try? PropertyListSerialization.propertyList(from: datos, format: nil)) as? [String: Any]
+        let destinos = info?["Destinations"] as? [[String: Any]] ?? []
+        return Set(destinos.compactMap { $0["MountPoint"] as? String })
+    }
+
     static func diskutil(_ args: [String]) -> Bool {
         let p = Process()
         p.executableURL = URL(fileURLWithPath: "/usr/sbin/diskutil")
@@ -181,7 +202,7 @@ enum MarcaDisco {
         let lado: CGFloat = 1024
         return NSImage(size: NSSize(width: lado, height: lado), flipped: false) { r in
             base.draw(in: r.insetBy(dx: 40, dy: 80).offsetBy(dx: 0, dy: 60))
-            let texto = hub ? T("HUB · CASA") : T("PORTÁTIL")
+            let texto = hub ? T("CASA") : T("PORTÁTIL")
             let color = hub ? NSColor(hex: 0x2B2A29) : NSColor(hex: 0xF56138)
             let fuente = NSFont.systemFont(ofSize: 132, weight: .heavy)
             let atributos: [NSAttributedString.Key: Any] = [.font: fuente, .foregroundColor: NSColor.white, .kern: 2]

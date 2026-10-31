@@ -65,7 +65,8 @@ echo "Memoria en reposo, sin portátil: $(memoria)"
 
 hdiutil attach -quiet "$TMP/port.sparseimage"
 esperar 90 'iguales Proyectos && iguales Notas' && ok "Al enchufar sincronizó sola" || mal "No sincronizó al enchufar"
-esperar 15 'mount | grep " on $PORT " | grep -q nobrowse' && ok "En casa el portátil quedó oculto del Finder" || mal "El portátil no quedó oculto"
+# Por defecto queda visible: oculto, macOS no anota sus cambios y la vuelta tendría que revisar todo (31/10/2026).
+sleep 3; mount | grep " on $PORT " | grep -q nobrowse && mal "El portátil quedó oculto (por defecto va visible)" || ok "En casa el portátil queda visible (macOS anota sus cambios)"
 [ -f "$HUB/.VolumeIcon.icns" ] && [ -f "$PORT/.VolumeIcon.icns" ] && ok "Cada disco tiene su ícono" || mal "Faltan los íconos de los discos"
 [ -f "$PORT/Proyectos/B/node_modules/x/index.js" ] && ok "Las dependencias viajaron (opción prendida)" || mal "node_modules no viajó"
 [ ! -e "$PORT/Proyectos/B/.next" ] && ok ".next (regenerable) no viajó" || mal ".next viajó"
@@ -90,6 +91,7 @@ echo "Fugas: $(fugas)"
 [ -d "$HUB/Proyectos/A/.git" ] && git -C "$HUB/Proyectos/A" config core.fsmonitor "touch $TMP/MARCA_GIT; false"
 orden mevoy
 esperar 30 '! mount | grep -q " on $PORT "' && ok "Me voy: copió y expulsó el portátil" || mal "Me voy no expulsó"
+esperar 30 '! mount | grep -q " on $HUB "' && ok "Me voy: expulsó también el hub" || mal "Me voy dejó el hub montado"
 [ ! -e "$TMP/MARCA_GIT" ] && ok "git no ejecutó el comando de la configuración del proyecto" || mal "git ejecutó un comando del proyecto"
 esperar 10 'grep -q "AVISO Listo para irte" "$LOG"' && ok "Avisó \"Listo para irte\"" || mal "No avisó al irse"
 if [ -d "$HUB/Proyectos/A/.git" ]; then
@@ -98,7 +100,10 @@ fi
 
 # "Afuera": la app cerrada y sin hub; se trabaja en el portátil.
 kill "$PID"; wait "$PID" 2>/dev/null; PID=""
-hdiutil detach -quiet "$HUB"; hdiutil attach -quiet "$TMP/port.sparseimage"
+mount | grep -q " on $HUB " && hdiutil detach -quiet "$HUB"; hdiutil attach -quiet "$TMP/port.sparseimage"
+# Como en la vida real, se escribe después de que macOS empezó a anotar el disco: lo escrito en el primer instante no
+# queda en su registro de cambios y lo trae la revisión completa de un minuto después (no esta parte de la prueba).
+sleep 2
 echo "editado afuera" >> "$PORT/Proyectos/A/f2.txt"; rm "$PORT/Proyectos/A/f3.txt"; echo "otra nota" > "$PORT/Notas/afuera.md"
 hdiutil detach -quiet "$PORT"; hdiutil attach -quiet "$TMP/hub.sparseimage"
 RELEVO_PRUEBA=1 CFFIXED_USER_HOME="$CASA" "$BIN" >> "$LOG" 2>&1 &

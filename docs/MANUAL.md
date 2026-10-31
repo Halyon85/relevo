@@ -1,6 +1,6 @@
 # Manual de Relevo
 
-Relevo mantiene iguales dos lugares: el **hub**, el disco (o la carpeta de tu Mac) donde trabajás en casa, y el **portátil**, el disco que te llevás. Mientras están los dos conectados, cada cambio pasa solo al otro lado. Afuera trabajás en el portátil como siempre y, al volver, Relevo trae lo que hiciste.
+Relevo mantiene iguales dos lugares: el **disco de casa**, el disco (o la carpeta de tu Mac) donde trabajás, y el **portátil**, el disco que te llevás. Mientras están los dos conectados, cada cambio pasa solo al otro lado. Afuera trabajás en el portátil como siempre y, al volver, Relevo trae lo que hiciste.
 
 [Read in English](MANUAL.en.md) · [Volver al inicio](../LEEME.md)
 
@@ -32,11 +32,11 @@ La primera vez que la abrís, macOS te pide dos permisos: **mandar avisos** y **
 
 Al abrir Relevo por primera vez aparece el asistente, de tres pasos:
 
-1. **¿Dónde trabajás?** Elegís el hub: un disco que queda en casa, esta Mac, o una carpeta de esta Mac (por ejemplo, tu carpeta de Proyectos).
+1. **¿Dónde trabajás?** Elegís el disco de casa: un disco que queda en casa, esta Mac, o una carpeta de esta Mac (por ejemplo, tu carpeta de Proyectos).
 2. **¿Qué disco te llevás?** Elegís el portátil. Si no aparece, enchufalo y tocá «Volver a buscar discos». Si querés usar el mismo disco para más de una cosa (por ejemplo, proyectos y fotos), tildá «Guardar en una carpeta del portátil» y poné un nombre.
-3. **Casi listo.** Relevo te ofrece ponerle al portátil el nombre del hub para usarlo afuera (ver [Las mismas rutas en todos lados](#las-mismas-rutas-en-todos-lados)). Después elegís qué carpetas se sincronizan.
+3. **Casi listo.** Relevo te ofrece ponerle al portátil el nombre del disco de casa para usarlo afuera (ver [Las mismas rutas en todos lados](#las-mismas-rutas-en-todos-lados)). Después elegís qué carpetas se sincronizan.
 
-Con eso queda armado un **vínculo**: un par hub + portátil. Después tocás «Sincronizar ahora». La primera vez copia todo (puede tardar); después, solo lo que cambia.
+Con eso queda armado un **vínculo**: un par disco de casa + portátil. Después tocás «Sincronizar ahora». La primera vez copia todo (puede tardar); después, solo lo que cambia.
 
 ## 3. El día a día
 
@@ -49,19 +49,19 @@ No tenés que hacer nada. Cada cambio se copia a los pocos segundos (la **copia 
 Tenés dos formas:
 
 - **Expulsar el portátil**, desde Relevo o desde el Finder. Como todo ya está copiado, alcanza.
-- **«Me voy»**, en el menú o en Inicio. Copia lo último que quedó pendiente (segundos) y expulsa el portátil. Cuando dice «Listo: ya podés desenchufarlo», lo sacás.
+- **«Me voy»**, en el menú o en Inicio. Te pregunta «¿Me voy?» con la lista de discos, copia lo último que quedó pendiente (segundos) y expulsa **todos** los discos: el portátil, el disco de casa, Time Machine y cualquier otro. Si algo necesita tu OK o quedó sin copiar, no expulsa ninguno y te dice por qué. Cuando dice «Listo: todo copiado y los discos expulsados», los sacás.
 
-Si algo está usando el disco, Relevo cierra solo lo que corre de fondo. Las apps con ventana te las muestra: tocás «Cerrar y expulsar» o las cerrás vos. Las sesiones de Claude abiertas en el disco se pueden volver a abrir desde la app después.
+Si algo está usando un disco, Relevo cierra solo lo que corre de fondo. Las apps con ventana te las muestra: tocás «Cerrar y expulsar» o las cerrás vos. Las sesiones de Claude abiertas en el disco se pueden volver a abrir desde la app después.
 
 ### Afuera
 
-Trabajás en el portátil como siempre. Si le pusiste el nombre del hub, tus proyectos están en la misma ubicación y tus apps los encuentran sin cambiar nada. El menú dice «Trabajando desde el portátil».
+Trabajás en el portátil como siempre. Si le pusiste el nombre del disco de casa, tus proyectos están en la misma ubicación y tus apps los encuentran sin cambiar nada. El menú dice «Trabajando desde el portátil».
 
 ### Cuando volvés
 
 Enchufás el portátil. Relevo:
 
-1. Le cambia el nombre al portátil para que no choque con el hub (no desmonta nada).
+1. Le cambia el nombre al portátil para que no choque con el disco de casa (no desmonta nada).
 2. Trae lo que hiciste afuera, revisando solo lo que cambió.
 
 **Mientras tanto, esperá antes de abrir tus apps.** Si tarda más de unos segundos te llega el aviso «Esperá antes de abrir tus apps», la pantalla de Inicio dice «Esperá un momento» y el ícono de la barra se mueve. Cuando termina te llega «Listo, ya podés abrir tus apps», con lo que trajo.
@@ -70,9 +70,10 @@ Si abriste una app en el disco antes de tiempo (por ejemplo, Claude) y quedó tr
 
 ### Las mismas rutas en todos lados
 
-- **Afuera**, el portátil se llama igual que el hub. Tus proyectos están en `/Volumes/<nombre del hub>/…`, como en casa.
-- **En casa** se llama «<nombre> (portátil)», así nunca hay dos discos con el mismo nombre y da igual cuál monte primero la Mac al prender.
-- En casa, Relevo puede **ocultar el portátil del Finder** para que veas uno solo (se elige en Discos). Lo abrís desde el menú de Relevo con «Mostrar el portátil en el Finder».
+- **Afuera**, el portátil se llama igual que el disco de casa. Tus proyectos están en `/Volumes/<nombre del disco de casa>/…`, como en casa.
+- **En casa** se llama «<nombre> (portátil)», así nunca hay dos discos con el mismo nombre y da igual cuál monte primero la Mac al prender. Si en casa le ponés otro nombre en el Finder, Relevo lo respeta. Afuera, en cambio, siempre vuelve al nombre del disco de casa: si no, tus apps no encuentran los proyectos.
+- En casa ves los dos discos en el Finder. Si preferís, Relevo puede **ocultar el portátil del Finder** (se elige en Discos), pero no conviene: oculto, macOS no anota sus cambios y al volver de afuera Relevo tiene que revisar todos los proyectos, así que tarda más.
+- **Si tus discos se llaman distinto**, al vincularlos Relevo te ofrece ponerle al portátil el nombre del disco de casa (en Discos también está «Usar “<nombre>” afuera»). Así tus apps, por ejemplo Claude, encuentran los proyectos en la misma ubicación.
 
 ## 4. El menú de la barra
 
@@ -80,9 +81,12 @@ Al tocar el ícono de Relevo ves, por cada vínculo:
 
 - **El estado:** «Todo al día», «Copiando 3 de 10…», «Revisando…», «Hace falta tu OK», «En pausa hasta las 18:00», etc.
 - **Sincronizar ahora:** revisa lo que cambió y lo copia.
-- **Me voy (copiar y expulsar).**
 - **Mostrar el portátil en el Finder**, cuando está oculto.
 - **Pausar:** por 1 hora, hasta mañana o hasta que la reanudes. «Reanudar» la vuelve a prender.
+
+Y para todos los vínculos juntos:
+
+- **Me voy (copiar y expulsar todo).**
 
 Abajo de todo:
 
@@ -110,11 +114,11 @@ Tiene dos partes:
 
 ### Discos
 
-- **Tus vínculos:** cada vínculo con su hub y su portátil, si están conectados y cuánto lugar libre tienen. Con «Agregar otro vínculo» sumás otro par (por ejemplo, fotos en otro disco), y con «Quitar vínculo» Relevo deja de sincronizar ese par: no borra nada de ningún disco.
-- **El nombre afuera:** «Usar “<nombre>” afuera» le pone al portátil el nombre del hub.
-- **En casa, ocultar el portátil del Finder.**
+- **Tus vínculos:** cada vínculo con su disco de casa y su portátil, si están conectados y cuánto lugar libre tienen. Con «Agregar otro vínculo» sumás otro par (por ejemplo, fotos en otro disco), y con «Quitar vínculo» Relevo deja de sincronizar ese par: no borra nada de ningún disco.
+- **El nombre afuera:** «Usar “<nombre>” afuera» le pone al portátil el nombre del disco de casa.
+- **En casa, ocultar el portátil del Finder.** Viene apagado: oculto, macOS no anota sus cambios y la vuelta tarda más.
 - **Cifrado del portátil** (ver [Cifrar el portátil](#8-cifrar-el-portátil)).
-- **Revisión a fondo:** compara el contenido de cada archivo, no solo la fecha y el tamaño, para encontrar copias dañadas. Es lenta porque lee todo. Si encuentra diferencias, te ofrece copiarlos de nuevo desde el hub.
+- **Revisión a fondo:** compara el contenido de cada archivo, no solo la fecha y el tamaño, para encontrar copias dañadas. Es lenta porque lee todo. Si encuentra diferencias, te ofrece copiarlos de nuevo desde el disco de casa.
 - **Expulsar discos:** todos los discos externos conectados, de cualquier vínculo.
 
 ### Historial
@@ -128,7 +132,7 @@ Tiene dos partes:
 
 Para quien trabaja con git:
 
-- **Clonar con un link** (GitHub, GitLab, Bitbucket…) o desde tu lista de GitHub, si tenés instalada la herramienta `gh` y la sesión iniciada. Elegís si queda **en el hub** (Relevo lo copia al portátil) o **directo en el portátil** (Relevo lo copia al hub). Si la carpeta ya existe, no se pisa. Relevo no guarda ninguna clave: usa tus credenciales de siempre.
+- **Clonar con un link** (GitHub, GitLab, Bitbucket…) o desde tu lista de GitHub, si tenés instalada la herramienta `gh` y la sesión iniciada. Elegís si queda **en el disco de casa** (Relevo lo copia al portátil) o **directo en el portátil** (Relevo lo copia al disco de casa). Si la carpeta ya existe, no se pisa. Relevo no guarda ninguna clave: usa tus credenciales de siempre.
 - **Tus repositorios:** Relevo busca carpetas con git un nivel adentro de cada carpeta que se sincroniza y te muestra cuáles tienen cambios sin commit, commits sin subir o están atrasados.
 - **Buscar novedades** pregunta a cada remoto si hay commits nuevos (`git fetch`); no cambia tus archivos. **Actualizar** trae los commits nuevos solo si no hay que mezclar nada (`git pull --ff-only`).
 - **Detalles:** abrirlo en el Finder o la Terminal, ver los cambios, hacer commit, unir ramas u ocultarlo de la lista. Los ocultos se siguen copiando igual.
@@ -142,7 +146,7 @@ Si git no está instalado, Relevo te dice cómo instalarlo.
   - Copia en vivo.
   - Abrir al iniciar sesión.
 - **Cuidados:**
-  - **Revisión completa diaria**, de madrugada o cuando no usás la Mac. «Revisar todo ahora» la corre en el momento.
+  - **Revisión completa diaria**, de madrugada o cuando no usás la Mac, y otra de fondo un minuto después de cada vuelta a casa. «Revisar todo ahora» la corre en el momento.
   - **Revisión a fondo una vez por mes**, con la Mac enchufada, los dos discos y sin usarla un rato. Solo avisa si encuentra algo.
   - **Antes de que la Mac se duerma**, copia lo pendiente (no expulsa).
 - **Atajos:** prender los atajos de teclado y ver los enlaces `relevo://`.
@@ -188,11 +192,11 @@ Si borrás (o movés) una carpeta entera de un disco, Relevo **no la borra del o
 
 ### El mismo archivo cambió en los dos lados
 
-Si cambiaste el mismo archivo distinto en el hub y en el portátil, Relevo **guarda las dos versiones**: la más nueva queda con su nombre y la otra al lado, en los dos discos, como «nombre (conflicto hub …)» o «nombre (conflicto portátil …)», con la fecha. En **Historial → Dos versiones** elegís cuál queda («Quedarme con la del hub», «Usar la otra») o, si ya lo arreglaste a mano, «Ya lo resolví».
+Si cambiaste el mismo archivo distinto en el disco de casa y en el portátil, Relevo **guarda las dos versiones**: la más nueva queda con su nombre y la otra al lado, en los dos discos, como «nombre (conflicto hub …)» o «nombre (conflicto portátil …)», con la fecha. En **Historial → Dos versiones** elegís cuál queda («Quedarme con la del disco de casa», «Usar la otra») o, si ya lo arreglaste a mano, «Ya lo resolví».
 
 ### Repositorios con commits distintos en cada disco
 
-Si un proyecto tiene commits distintos en el hub y en el portátil, Relevo **no toca su carpeta `.git`** (así las historias no se mezclan) y te avisa para que las unas con git. El resto de los archivos sigue sincronizándose.
+Si un proyecto tiene commits distintos en el disco de casa y en el portátil, Relevo **no toca su carpeta `.git`** (así las historias no se mezclan) y te avisa para que las unas con git. El resto de los archivos sigue sincronizándose.
 
 ### Si desenchufás el disco en medio de una copia
 
@@ -209,7 +213,7 @@ Si perdés el portátil, cualquiera puede leer lo que tiene, incluidas las clave
 
 En esta Mac no cambia nada: la clave queda en el llavero y Relevo abre el disco sola cada vez que lo enchufás. En otra Mac te pide la clave. Para volver a verla, «Ver la clave» te pide Touch ID o la contraseña de la Mac.
 
-Si perdés la clave y no está en ningún lado, lo del portátil no se puede recuperar. Pero el hub tiene todo: se borra el portátil y Relevo lo vuelve a llenar.
+Si perdés la clave y no está en ningún lado, lo del portátil no se puede recuperar. Pero el disco de casa tiene todo: se borra el portátil y Relevo lo vuelve a llenar.
 
 ## 9. Atajos y enlaces
 
@@ -235,9 +239,11 @@ Si perdés la clave y no está en ningún lado, lo del portátil no se puede rec
 
 ## 10. Qué hacer si…
 
-**…el portátil aparece con el nombre del hub en casa («Los discos quedaron al revés»).** Pasa si el portátil se montó primero. Mientras tanto Relevo no sincroniza, para que nada vaya al disco equivocado. Tocá **«Acomodar»** en Inicio: les cambia el nombre sin desmontar nada.
+**…el portátil aparece con el nombre del disco de casa en casa («Los discos quedaron al revés»).** Pasa si el portátil se montó primero. Mientras tanto Relevo no sincroniza, para que nada vaya al disco equivocado. Tocá **«Acomodar»** en Inicio: les cambia el nombre sin desmontar nada.
 
 **…no puedo expulsar el disco.** Relevo te muestra qué lo está usando. Cerralo o tocá «Cerrar y expulsar». Si macOS no dice qué lo usa, probá de nuevo en unos segundos.
+
+**…la vuelta a casa tarda mucho.** Fijate que el portátil no esté oculto del Finder (Discos): oculto, macOS no anota sus cambios y Relevo tiene que revisar todo. Relevo anota cada paso de la vuelta, con la hora, en `~/Library/Logs/Relevo.log`: ahí se ve en qué se fue el tiempo.
 
 **…Relevo dice «Falta la primera copia».** Tocá «Sincronizar ahora». La primera vez copia todo y puede tardar.
 

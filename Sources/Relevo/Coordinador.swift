@@ -138,6 +138,9 @@ final class Coordinador: ObservableObject, Identifiable {
     private var visibilidadTrabada = false
     /// Desde cuándo está el portátil sin el hub (para no ponerle el nombre del hub mientras el hub todavía monta).
     private var portatilSoloDesde: Date?
+    /// El nombre con el que se vio el portátil ya acomodado, en casa o afuera, mientras sigue enchufado: si cambia a uno
+    /// que Relevo no pone, se lo cambiaste vos en el Finder (ver `acomodarNombres`). nil al desenchufarlo.
+    private var nombreAcomodado: String?
     private var esperaNombreProgramada = false
     /// Expulsando el portátil ("Me voy" o "Expulsar"): ya lleva el nombre de afuera y no hay que devolverle el de casa.
     private var expulsandoPortatil = false
@@ -151,6 +154,8 @@ final class Coordinador: ObservableObject, Identifiable {
     private var avisoLlegada: DispatchWorkItem?
     /// Ya se mandó el "Esperá" de esta llegada (entonces también va el "Listo").
     private var llegadaAvisada = false
+    /// Cuándo se juntaron los discos de esta llegada (para anotar cuánto tardó en `Bitacora`).
+    private var llegadaDesde: Date?
     /// Lo que trajo de afuera la vuelta de esta llegada, para decirlo en el "Listo" (en vez de otro aviso aparte).
     private var traidoEnLlegada: String?
     /// Si alguna vuelta de una cadena (copias que esperaban a otra) salió mal: así nadie recibe "bien" por una ajena.
@@ -196,7 +201,12 @@ final class Coordinador: ObservableObject, Identifiable {
         if !Cierre.anteriorFueLimpio { revisarTodoLaProxima = true }
         let centro = NSWorkspace.shared.notificationCenter
         observadores.append(centro.addObserver(forName: NSWorkspace.didMountNotification, object: nil, queue: .main) { [weak self] n in
+            if let r = Self.ruta(n) { Bitacora.anotar("Se montó \(r) (aviso del Finder)") }
             self?.discosCambiaron(montado: Self.ruta(n))
+        })
+        // El aviso directo de macOS llega apenas se monta (el del Finder puede tardar decenas de segundos).
+        observadores.append(NotificationCenter.default.addObserver(forName: Montajes.montado, object: nil, queue: .main) { [weak self] n in
+            self?.discosCambiaron(montado: n.userInfo?["ruta"] as? String)
         })
         observadores.append(centro.addObserver(forName: NSWorkspace.willUnmountNotification, object: nil, queue: .main) { [weak self] n in
             guard let self, let r = Self.ruta(n) else { return }
@@ -231,7 +241,10 @@ final class Coordinador: ObservableObject, Identifiable {
         vigia.detener()
         temporizador?.invalidate()
         relojMensual?.invalidate()
-        observadores.forEach { NSWorkspace.shared.notificationCenter.removeObserver($0) }
+        observadores.forEach {
+            NSWorkspace.shared.notificationCenter.removeObserver($0)
+            NotificationCenter.default.removeObserver($0)
+        }
         observadores = []
     }
 
@@ -270,7 +283,7 @@ final class Coordinador: ObservableObject, Identifiable {
         // Se fue uno de los dos (no por volver a montarlo, eso sale antes): ya no hay nada que esperar.
         if portatil == nil || hub == nil { terminarLlegada(avisar: false) }
         if portatil == nil {
-            vueltaPendiente = false; expulsandoPortatil = false
+            vueltaPendiente = false; expulsandoPortatil = false; nombreAcomodado = nil
             cola.async { [weak self] in self?.identidadRevisada = nil }   // el próximo que se enchufe se mira de nuevo
         }
         if (portatil == nil || hub == nil), esperandoPortatilLibre { esperandoPortatilLibre = false; aviso = nil }
@@ -308,6 +321,9 @@ final class Coordinador: ObservableObject, Identifiable {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
                 self?.sincronizarInteligente { [weak self] _ in
                     self?.vueltaEnCurso = false
+                    // Lo que trajo de afuera, tanto si revisó todo como solo lo que cambió (antes solo salía al revisar
+                    // todo, y como cada vuelta revisaba todo no se notaba: 31/10/2026).
+                    if let r = self?.resumenVuelta { self?.resumenVuelta = nil; self?.avisarVuelta(r) }
                     self?.revisarLlegada()
                     // Si la última revisión completa fue hace mucho (por ejemplo, el portátil se usó en otra Mac),
                     // se hace una de fondo; si te vas, se frena sola.
@@ -325,6 +341,8 @@ final class Coordinador: ObservableObject, Identifiable {
     private func empezarLlegada() {
         guard activo, !llegando else { return }
         llegando = true
+        llegadaDesde = Date()
+        Bitacora.anotar("Llegada: están los dos discos (hub \(hub?.ruta ?? "?"), portátil \(portatil?.ruta ?? "?"))")
         llegadaAvisada = false
         traidoEnLlegada = nil
         alCambiarEstado?()
@@ -350,6 +368,10 @@ final class Coordinador: ObservableObject, Identifiable {
     private func terminarLlegada(avisar: Bool) {
         guard llegando else { return }
         llegando = false
+        if let d = llegadaDesde {
+            Bitacora.anotar(String(format: "Llegada terminada en %.1f s%@", Date().timeIntervalSince(d), avisar ? "" : " (se fue un disco)"))
+        }
+        llegadaDesde = nil
         avisoLlegada?.cancel()
         avisoLlegada = nil
         alCambiarEstado?()
@@ -385,10 +407,21 @@ final class Coordinador: ObservableObject, Identifiable {
         }
         guard let afuera = vinculo?.nombreAfuera else { return false }
         var pasos: [() -> Bool] = []
+        // Relevo solo pone el nombre de afuera o el de casa: si el portátil, ya acomodado y sin desenchufarse, pasó a
+        // llamarse de otra forma, se lo cambiaste vos en el Finder.
+        let enCasaAntes = vinculo?.nombreEnCasa ?? Discos.nombreEnCasa(afuera)
+        let renombradoPorVos = nombreAcomodado != nil && nombreAcomodado != p.nombre && ![afuera, enCasaAntes].contains(p.nombre)
+            && !p.nombre.hasSuffix(" ·") && !p.nombre.isEmpty
         if let h = hub {
             portatilSoloDesde = nil
+            // En casa ese nombre se respeta: pasa a ser su nombre de casa (afuera sigue con el del hub).
+            if renombradoPorVos {
+                Bitacora.anotar("Le pusiste al portátil “\(p.nombre)”: queda como su nombre en casa")
+                ajustes.cambiar(id) { $0.nombreEnCasa = p.nombre }
+            }
             let enCasa = vinculo?.nombreEnCasa ?? Discos.nombreEnCasa(afuera)
             if vinculo?.nombreEnCasa == nil { ajustes.cambiar(id) { $0.nombreEnCasa = enCasa } }
+            if p.nombre == enCasa, p.ruta == "/Volumes/" + enCasa { nombreAcomodado = p.nombre }
             // El portátil tiene la ruta de afuera y lo estás usando: cambiarle el nombre ahora haría que lo que guarda
             // por esa ruta pase a escribir en el hub a mitad de camino. Se espera a que quede libre (se copia igual).
             if p.nombre != enCasa, p.ruta == "/Volumes/" + afuera, !portatilLibreParaPasar(p) { return false }
@@ -400,6 +433,14 @@ final class Coordinador: ObservableObject, Identifiable {
                 pasos.append { Discos.buscar(h.uuid).map(Discos.recuperarRuta) ?? false }
             }
         } else {
+            // Afuera no: tiene que llamarse como el hub para que tus apps encuentren los proyectos. Se le devuelve el
+            // nombre (más abajo) y se explica por qué.
+            if renombradoPorVos {
+                aviso = T("Afuera el portátil tiene que llamarse “%@”, como el disco de casa: así tus apps encuentran los proyectos en la misma ubicación. Le devolví ese nombre. En casa sí le podés poner el nombre que quieras.", afuera)
+                nombreAcomodado = nil
+                portatilSoloDesde = .distantPast   // sin esperar: ya se sabe que el hub no está
+            }
+            if p.nombre == afuera { nombreAcomodado = p.nombre }
             guard p.nombre != afuera else { portatilSoloDesde = nil; return false }
             let desde = portatilSoloDesde ?? Date()
             portatilSoloDesde = desde
@@ -424,10 +465,13 @@ final class Coordinador: ObservableObject, Identifiable {
         }
         guard !pasos.isEmpty else { return false }
         renombrando = true
+        let desde = Date()
+        Bitacora.anotar("Cambio los nombres de los discos")
         cola.async { [weak self] in
             let bien = pasos.allSatisfy { $0() }
             DispatchQueue.main.async {
                 guard let self else { return }
+                Bitacora.anotar(String(format: "Nombres %@ en %.1f s", bien ? "listos" : "trabados", Date().timeIntervalSince(desde)))
                 self.renombrando = false
                 if !bien {
                     self.nombresTrabados = true
@@ -497,14 +541,15 @@ final class Coordinador: ObservableObject, Identifiable {
                     self.libreVisto = Date()
                 } else {
                     self.libreVisto = nil
+                    Bitacora.anotar("El portátil está en uso (\(trabajando.map(\.app).joined(separator: ", "))): espero para cambiar los nombres")
                     if !self.esperandoPortatilLibre {
                         self.esperandoPortatilLibre = true
                         // Lo que más pasa: abriste Claude (o la Terminal) antes de que Relevo acomodara los discos y
                         // quedó trabajando en el portátil. Se dice qué app, para que la cierres y la vuelvas a abrir.
                         let apps = trabajando.map(\.app).joined(separator: ", ")
-                        self.aviso = T("%@ quedó abierto en el portátil. Cerralo: paso al hub y te aviso para que lo vuelvas a abrir.", apps)
+                        self.aviso = T("%@ quedó abierto en el portátil. Cerralo: paso al disco de casa y te aviso para que lo vuelvas a abrir.", apps)
                         Notificar.enviar(T("Cerrá %@ un momento", apps),
-                                         T("Se abrió en el portátil antes de que acomodara los discos. Cuando lo cierres paso al hub y te aviso para que lo vuelvas a abrir."))
+                                         T("Se abrió en el portátil antes de que acomodara los discos. Cuando lo cierres paso al disco de casa y te aviso para que lo vuelvas a abrir."))
                         // El "Listo" de la llegada es el aviso para volver a abrirla (ya no hace falta el "Esperá").
                         self.empezarLlegada()
                         self.llegadaAvisada = true
@@ -535,12 +580,15 @@ final class Coordinador: ObservableObject, Identifiable {
         guard p.visible == ocultar else { return false }
         remontando = true
         desmontesPedidos[p.ruta] = Date()
+        let desde = Date()
+        Bitacora.anotar("Vuelvo a montar el portátil \(ocultar ? "oculto" : "visible")")
         cola.async { [weak self] in
             // Si está cifrado, al desmontarlo se cierra: `remontar` lo vuelve a abrir con la clave del llavero.
             let bien = Discos.remontar(p, oculto: ocultar, clave: Self.clave(p.uuid))
             let quedoAfuera = !bien && Discos.buscar(p.uuid) == nil
             DispatchQueue.main.async {
                 guard let self else { return }
+                Bitacora.anotar(String(format: "Portátil montado otra vez %@ en %.1f s", bien ? "bien" : "con problemas", Date().timeIntervalSince(desde)))
                 self.remontando = false
                 self.desmontesPedidos[p.ruta] = nil
                 // Si algo lo está usando no se puede volver a montar: no se insiste hasta que cambien los discos.
@@ -831,6 +879,7 @@ final class Coordinador: ObservableObject, Identifiable {
         get { (try? Data(contentsOf: archivoMarcas)).flatMap { try? JSONDecoder().decode(MarcasGuardadas.self, from: $0) } }
         set {
             try? FileManager.default.createDirectory(at: archivoMarcas.deletingLastPathComponent(), withIntermediateDirectories: true)
+            if Notificar.prueba { print("MARCA guardada hub \(newValue?.hub?.evento ?? 0) \(newValue?.hub?.registro.prefix(8) ?? "-") · portátil \(newValue?.portatil?.evento ?? 0) \(newValue?.portatil?.registro.prefix(8) ?? "-")"); fflush(stdout) }
             if let newValue, let d = try? JSONEncoder().encode(newValue) { try? d.write(to: archivoMarcas, options: .atomic) }
             else { try? FileManager.default.removeItem(at: archivoMarcas) }
         }
@@ -866,15 +915,30 @@ final class Coordinador: ObservableObject, Identifiable {
         let nuevas = MarcasGuardadas(hub: Historia.marca(raizHub), portatil: Historia.marca(raizPortatil))
         // Después de un corte de luz o de un disco sacado sin expulsar, el registro puede no tener lo último: todo.
         let guardadas = revisarTodoLaProxima ? nil : marcasGuardadas
+        let motivoTodo = revisarTodoLaProxima ? "un corte o un disco sacado sin expulsar" : guardadas == nil ? "sin marca guardada" : nil
+        let desde = Date()
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             var rutas: Historia.Cambios? = Historia.Cambios()
-            for (marca, raiz) in [(guardadas?.hub, raizHub), (guardadas?.portatil, raizPortatil)] {
-                guard let marca, let c = Historia.cambios(desde: marca, en: raiz) else { rutas = nil; break }
+            var motivo = motivoTodo
+            for (marca, raiz, lado) in [(guardadas?.hub, raizHub, "hub"), (guardadas?.portatil, raizPortatil, "portátil")] {
+                guard let marca else { rutas = nil; motivo = motivo ?? "falta la marca del \(lado)"; break }
+                let c = Historia.cambios(desde: marca, en: raiz)
+                if Notificar.prueba {
+                    print("HISTORIA \(lado) desde \(marca.evento) \(marca.registro.prefix(8)) ahora \(Historia.marca(raiz)?.registro.prefix(8) ?? "nil") → \(c.map { "\($0.carpetas.count) carpeta(s)" } ?? "no sirve")")
+                    fflush(stdout)
+                }
+                guard let c else {
+                    rutas = nil; motivo = "el registro de cambios del \(lado) no sirve"; break
+                }
                 rutas?.carpetas.formUnion(c.carpetas)
                 rutas?.enteras.formUnion(c.enteras)
             }
+            let leido = Date().timeIntervalSince(desde)
             DispatchQueue.main.async {
                 guard let self else { return }
+                if let motivo {
+                    Bitacora.anotar(String(format: "Revisión: todos los proyectos (%@; registro leído en %.1f s)", motivo, leido))
+                }
                 let guardar: (Bool) -> Void = { [weak self] bien in
                     // Revisó todo lo que cambió: queda al día (la próxima vez, desde acá; "Me voy" ya puede ir rápido).
                     if bien { self?.quedoAlgo = false }
@@ -904,6 +968,7 @@ final class Coordinador: ObservableObject, Identifiable {
                 for par in self.esperas.keys where todos.contains(par) { zonas[par] = .todo }
                 for par in self.paresSinCopiar(arriba: arriba) { zonas[par] = .todo }
                 let pares = Set(zonas.keys)
+                Bitacora.anotar(String(format: "Revisión: solo lo que cambió, %ld proyecto(s) (registro leído en %.1f s)", pares.count, leido))
                 if Notificar.prueba { print("REVISA \(pares.count): \(pares.sorted().joined(separator: ", "))"); fflush(stdout) }
                 if pares.isEmpty {
                     guardar(true)
@@ -934,8 +999,11 @@ final class Coordinador: ObservableObject, Identifiable {
         })
     }
 
-    /// La revisión completa de fondo: una vez por día (de madrugada, o cuando la Mac está sin usar) y, al volver con el
-    /// portátil, si la última fue hace más de 12 horas (cubre que se haya usado en otra Mac). No escribe nada si todo
+    /// La revisión completa de fondo: una vez por día (de madrugada, o cuando la Mac está sin usar) y un minuto después de
+    /// cada vuelta con el portátil, si la última fue hace más de media hora. La de la vuelta cubre lo que el registro de
+    /// cambios de macOS no ve: el portátil usado en otra Mac y lo escrito en el primer instante después de enchufarlo
+    /// (macOS todavía no anota ese disco: probado el 31/10/2026, se pierde la mitad de las veces). La vuelta ya avisó
+    /// "Listo"; esta corre después, sin apuro. No escribe nada si todo
     /// está igual; si te vas mientras corre, se frena sola (`frenarRevisionDeFondo`). Lo llaman el reloj de cada media
     /// hora y la vuelta del portátil.
     func revisionCompletaSiToca(alVolver: Bool = false, forzar: Bool = false) {
@@ -943,7 +1011,7 @@ final class Coordinador: ObservableObject, Identifiable {
               estado != .expulsando, !(vinculo?.pausado ?? false) else { return }
         let hace = ultimaCompleta.map { Date().timeIntervalSince($0) } ?? .infinity
         let hora = Calendar.current.component(.hour, from: Date())
-        let toca = alVolver ? hace > 12 * 3600 : hace > 20 * 3600 && ((2...5).contains(hora) || Energia.inactiva > 20 * 60)
+        let toca = alVolver ? hace > 30 * 60 : hace > 20 * 3600 && ((2...5).contains(hora) || Energia.inactiva > 20 * 60)
         guard toca || forzar else { return }
         revisandoDeFondo = true
         let nuevas = [raizHub, raizPortatil].map { $0.flatMap(Historia.marca) }
@@ -1004,6 +1072,8 @@ final class Coordinador: ObservableObject, Identifiable {
         if limpiar { ultimaLimpieza = Date() }
         let raices = [s.volumenHub, s.volumenPortatil]
         let identidad = datosIdentidad
+        // En la bitácora va el detalle de la vuelta al llegar y de las revisiones de todo; de la copia en vivo, solo lo lento.
+        let detallar = llegando || vueltaEnCurso || carpetas == nil
 
         cola.async { [weak self] in
             guard let self else { return }
@@ -1013,7 +1083,12 @@ final class Coordinador: ObservableObject, Identifiable {
                 }
                 return
             }
-            if limpiar { Papelera.limpiar(raices, dias: diasPapelera) }
+            if limpiar {
+                let desde = Date()
+                Papelera.limpiar(raices, dias: diasPapelera)
+                Bitacora.anotar(String(format: "Papelera de Relevo limpiada en %.1f s", Date().timeIntervalSince(desde)))
+            }
+            let vueltaDesde = Date()
             var nuevosPedidos: [PedidoOK] = []
             var analizadas = Set<String>()
             var todoBien = true
@@ -1027,8 +1102,16 @@ final class Coordinador: ObservableObject, Identifiable {
                 // Cada carpeta suelta su memoria al terminar (las grandes pueden tener cientos de miles de archivos).
                 let seguir: Bool = autoreleasepool {
                     do {
+                        let desde = Date()
                         let a = try s.analizar(carpeta, zonas: zonas[carpeta])
                         analizadas.insert(carpeta)
+                        defer {
+                            // Solo lo que tardó o movió algo (si no, la bitácora se llena de renglones iguales).
+                            let total = Date().timeIntervalSince(desde)
+                            if detallar && (total >= 0.5 || !a.plan.vacio) || total >= 2 {
+                                Bitacora.anotar(String(format: "  %@: %.1f s (%@)", carpeta, total, a.porZonas ? "solo lo que cambió" : "entera"))
+                            }
+                        }
                         if Notificar.prueba {
                             print(String(format: "ANALISIS %@ %@ %.2f s", carpeta, a.porZonas ? "zonas" : "entera", a.duracion))
                             fflush(stdout)
@@ -1075,6 +1158,8 @@ final class Coordinador: ObservableObject, Identifiable {
                 }
                 if !seguir { break }
             }
+            let duro = Date().timeIntervalSince(vueltaDesde)
+            if detallar || duro >= 2 { Bitacora.anotar(String(format: "Vuelta de %ld carpeta(s) en %.1f s", analizadas.count, duro)) }
             // Lo que se usó para revisar vuelve al sistema (si no, la app queda "ocupando" lo del pico).
             malloc_zone_pressure_relief(nil, 0)
             DispatchQueue.main.async {
@@ -1100,10 +1185,6 @@ final class Coordinador: ObservableObject, Identifiable {
             UserDefaults.standard.set(ultima, forKey: "ultima-\(id)")
         }
         if !nuevos.isEmpty { Notificar.enviar(T("Relevo necesita tu OK"), nuevos.map(\.carpeta).joined(separator: ", ")) }
-        if completas, let r = resumenVuelta {
-            resumenVuelta = nil
-            avisarVuelta(r)
-        }
         if completas {
             revisarEspacio()
             revisarClaves()
@@ -1158,7 +1239,7 @@ final class Coordinador: ObservableObject, Identifiable {
             } else if let nuevo = distintos.first(where: { !self.reposAvisados.contains($0) }) {
                 // Una vez por proyecto mientras Relevo esté abierto (se vuelve a ver en cada vuelta hasta que se unan).
                 self.reposAvisados.formUnion(distintos)
-                self.aviso = T("%@ tiene commits distintos en el hub y en el portátil. Para no mezclar las dos historias no copié su carpeta .git (el resto del proyecto, sí). Unilos con git: hacé commit y push de un lado y pull del otro.", nuevo)
+                self.aviso = T("%@ tiene commits distintos en el disco de casa y en el portátil. Para no mezclar las dos historias no copié su carpeta .git (el resto del proyecto, sí). Unilos con git: hacé commit y push de un lado y pull del otro.", nuevo)
                 Notificar.enviar(T("Commits distintos en %@", (nuevo as NSString).lastPathComponent),
                                  T("No copié su .git para no mezclar las historias. Unilos con git (push de un lado, pull del otro)."))
             }
@@ -1382,45 +1463,57 @@ final class Coordinador: ObservableObject, Identifiable {
         vigilar()
     }
 
-    /// Sincroniza todo y expulsa el portátil. Si algo necesita tu OK, frena antes de expulsar.
-    func meVoy() {
-        guard portatil != nil else { aviso = T("El portátil no está conectado."); return }
+    /// La parte de este vínculo en "Me voy" (lo arranca `Gestor.meVoy`, que después expulsa todos los discos juntos):
+    /// copia lo último y llama a `listo` con `bien` (se puede expulsar) y, si hay, la nota de git. No expulsa nada.
+    /// Si algo necesita tu OK o quedó sin copiar, lo dice en `aviso` y devuelve `bien` = false.
+    func prepararseParaIrse(_ listo: @escaping (_ bien: Bool, _ nota: String?) -> Void) {
+        guard let p = portatil, !p.esEstaMac else { listo(true, nil); return }
         aviso = nil
         if revisionAFondo?.automatica == true { revisionAFondo?.cancelador.cancelar() }
-        frenarRevisionDeFondo { [weak self] in self?.meVoyYa() }
+        frenarRevisionDeFondo { [weak self] in
+            guard let self else { listo(false, nil); return }
+            self.meVoyYa(listo: listo)
+        }
     }
 
     /// `intento`: cuántas veces se volvió a probar porque un archivo cambiaba mientras se copiaba (ver `seguir`).
-    private func meVoyYa(intento: Int = 0) {
+    private func meVoyYa(intento: Int = 0, listo: @escaping (_ bien: Bool, _ nota: String?) -> Void) {
         if trabadoAlReves {
             aviso = T("Los discos quedaron al revés: tocá “Acomodar” y después “Me voy”.")
+            listo(false, nil)
             return
         }
-        // Afuera (sin el hub) no hay nada que copiar: solo se expulsa.
-        if hub == nil || raizHub == nil { revisarGit { [weak self] nota in self?.expulsar(nota: nota) }; return }
+        // Afuera (sin el hub) no hay nada que copiar: solo se mira git.
+        if hub == nil || raizHub == nil { revisarGit { nota in listo(true, nota) }; return }
         let seguir: (Bool) -> Void = { [weak self] bien in
-            guard let self else { return }
+            guard let self else { listo(false, nil); return }
             // Lo que no entra en el portátil sí frena (afuera te faltaría). Los borrados pendientes no: quedan esperando
             // tu OK (o se aplican solos) y no se pierde nada.
             if !self.pedidos.allSatisfy(\.noFrena) {
                 self.aviso = T("Antes de irte, fijate lo que necesita tu OK.")
+                listo(false, nil)
                 return
             }
             if !bien {
                 // Solo archivos que cambiaban justo mientras se copiaban: se prueban de nuevo enseguida, solos.
                 if !self.quedoAlgo, !self.enUsoPendiente.isEmpty {
                     if intento < 3 {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in self?.meVoyYa(intento: intento + 1) }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+                            guard let self else { listo(false, nil); return }
+                            self.meVoyYa(intento: intento + 1, listo: listo)
+                        }
                     } else {
                         let donde = self.enUsoPendiente.keys.sorted().joined(separator: ", ")
                         self.aviso = T("Hay archivos que no paran de cambiar en %@. Cerrá lo que los está usando y tocá “Me voy” de nuevo.", donde)
+                        listo(false, nil)
                     }
                     return
                 }
                 self.aviso = T("Quedó algo sin copiar (mirá el historial). Probá de nuevo antes de irte.")
+                listo(false, nil)
                 return
             }
-            self.revisarGit { nota in self.expulsar(nota: nota) }
+            self.revisarGit { nota in listo(true, nota) }
         }
         // Con la copia en vivo andando desde la última revisión completa, casi todo ya está en el portátil: solo se
         // copia lo pendiente (segundos). Si no estaba mirando (copia en vivo apagada o recién conectado), revisa todo.
@@ -1443,37 +1536,6 @@ final class Coordinador: ObservableObject, Identifiable {
             }
         } else {
             sincronizarInteligente(aMano: true, alTerminar: seguir)
-        }
-    }
-
-    private func expulsar(nota: String? = nil) {
-        guard activo, let portatil, !portatil.esEstaMac else { return }
-        vigia.detener()
-        poner(.expulsando)
-        expulsandoPortatil = true
-        desmontesPedidos[portatil.ruta] = Date()
-        let s = Sincronizador(volumenHub: "", volumenPortatil: "", estado: Ajustes.carpetaEstado(id))
-        let nombreAfuera = vinculo.flatMap { Vinculo.discosEnteros($0.hub, $0.portatil) ? $0.nombreAfuera : nil }
-        // Con el nombre de afuera la ruta cambia: el aviso de desmontado llega con la nueva.
-        if let n = nombreAfuera { desmontesPedidos["/Volumes/" + n] = Date(); desmontesPedidos["/Volumes/" + n + " 1"] = Date() }
-        cola.async { [weak self] in
-            let r = Discos.expulsar(portatil, nombreAfuera: nombreAfuera)
-            DispatchQueue.main.async {
-                guard let self else { return }
-                switch r {
-                case .success:
-                    s.expulsadoBien(.portatil)
-                    self.listoParaIrse = true
-                    self.aviso = T("Listo: todo copiado y el portátil expulsado. Ya podés desenchufarlo.") + (nota.map { "\n" + $0 } ?? "")
-                    Notificar.enviar(T("Listo para irte"), T("Todo copiado. Ya podés desenchufar %@.", portatil.nombre))
-                case .failure(let e):
-                    self.desmontesPedidos[portatil.ruta] = nil
-                    self.expulsandoPortatil = false
-                    self.aviso = T("Está todo copiado, pero no se pudo expulsar: algo lo está usando. Arriba te digo qué es y lo podés cerrar.")
-                    Gestor.actual?.noSePudoExpulsar(e)
-                }
-                self.discosCambiaron()
-            }
         }
     }
 
@@ -1574,6 +1636,9 @@ extension Coordinador {
     }
 
     /// Para "Expulsar discos": que el portátil se tome como expulsado bien (lo recién copiado ya quedó guardado).
+    /// "Me voy" terminó y el portátil salió: Inicio y el menú dicen que ya se puede desenchufar. Lo llama `Gestor.expulsar`.
+    func quedoListoParaIrse() { listoParaIrse = true }
+
     func vaASerExpulsado(_ v: Volumen) {
         vigia.detener()
         expulsandoPortatil = true
@@ -1614,7 +1679,7 @@ extension Coordinador {
     /// Avisa una vez por día si a algún lado le queda poco lugar.
     func revisarEspacio() {
         guard activo else { return }
-        for (v, nombre) in [(portatil.flatMap { Discos.buscar($0.uuid) }, T("portátil")), (hub.flatMap { $0.esEstaMac ? nil : Discos.buscar($0.uuid) }, T("hub"))] {
+        for (v, nombre) in [(portatil.flatMap { Discos.buscar($0.uuid) }, T("portátil")), (hub.flatMap { $0.esEstaMac ? nil : Discos.buscar($0.uuid) }, T("disco de casa"))] {
             guard let v, v.capacidad > 0 else { continue }
             let poco = v.libre < max(5 << 30, v.capacidad / 20)
             let clave = "espacio-\(id)-\(v.uuid)"
@@ -1704,10 +1769,12 @@ final class Gestor: ObservableObject {
     }
     /// Discos que no se pudieron expulsar porque algo los usa: Inicio muestra quién y ofrece "Cerrar y expulsar".
     @Published var bloqueos: [Bloqueo] = []
+    /// "Me voy" está copiando lo último (para no arrancarlo dos veces).
+    var yendose = false
     var alCambiarEstado: (() -> Void)?
     private let activo: Bool
     private var suscripciones: [String: AnyCancellable] = [:]
-    /// El de la app (los coordinadores le avisan cuando "Me voy" no pudo expulsar).
+    /// El de la app (lo usa el botón "Me voy" de Inicio).
     private(set) static weak var actual: Gestor?
 
     init(activo: Bool = true) {
