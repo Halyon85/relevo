@@ -261,7 +261,7 @@ English aliases work too: `sync`, `leave`, `eject`, `pause?hours=1`, `resume`. �
 
   Your settings, links and trash stay as they were.
 
-- **If you installed a build published by Halyon Team:** it updates itself. Relevo checks for new versions once a day and asks before installing. You can also check by hand from the menu with “Check for Relevo updates…”. New versions come signed: Relevo only installs the ones Halyon Team signed.
+- **If you downloaded it from [Releases](https://github.com/Halyon85/relevo/releases):** it updates itself. Relevo checks for new versions once a day and asks before installing. You can also check by hand from the menu with “Check for Relevo updates…”. New versions come signed: Relevo only installs the ones Halyon Team signed.
 
 ---
 

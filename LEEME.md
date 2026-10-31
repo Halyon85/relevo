@@ -3,7 +3,7 @@
 <p align="center"><b>Tu disco de trabajo, en casa y afuera, siempre igual.</b><br>
 Una app chiquita de la barra de menú de macOS que mantiene idénticos, en los dos sentidos, un <i>hub</i> (el disco o la carpeta donde trabajás en casa) y un <i>disco portátil</i>.</p>
 
-<p align="center"><a href="https://relevo.halyon.app">Sitio</a> · <a href="docs/MANUAL.md">Manual</a> · <a href="README.md">Read in English</a></p>
+<p align="center"><a href="https://relevo.halyon.app">Sitio</a> · <a href="docs/MANUAL.md">Manual</a> · <a href="https://github.com/Halyon85/relevo/releases/latest">Descargar</a> · <a href="README.md">Read in English</a></p>
 
 ---
 
@@ -35,9 +35,15 @@ Memoria: ~30 MB en reposo, sin fugas. Una copia chica (lo de todos los días) us
 - Para compilar: Swift 6 (Xcode o solo las herramientas de línea de comandos: `xcode-select --install`).
 - El portátil tiene que estar en formato **APFS** (Utilidad de Discos). Los discos exFAT/FAT no guardan permisos ni enlaces y se pueden dañar si se sacan de golpe.
 
-## Compilar e instalar
+## Descargar
 
-Todavía no hay descargas listas: la compilás vos, tarda un minuto.
+Bajá el último `Relevo-x.y.z.zip` de [Releases](https://github.com/Halyon85/relevo/releases/latest), descomprimilo y arrastrá `Relevo.app` a Aplicaciones.
+
+> ⚠️ **Instalala bajo tu propio riesgo.** Relevo es software libre y gratis, sin ninguna garantía (mirá la [licencia](LICENSE)). Todavía no está firmada con un Developer ID de Apple, así que la primera vez macOS la bloquea: abrí **Ajustes del Sistema → Privacidad y seguridad**, bajá hasta el final y tocá **Abrir igual** al lado de Relevo. Se hace una sola vez; después se actualiza sola (cada actualización se comprueba con la clave de Relevo). Hasta que esté firmada con Developer ID, macOS puede volver a pedir el permiso de los discos externos después de una actualización.
+
+Si preferís no confiar en una descarga, compilala vos con este código: tarda un minuto.
+
+## Compilar e instalar
 
 ```bash
 git clone https://github.com/Halyon85/relevo.git && cd relevo
@@ -47,7 +53,7 @@ git clone https://github.com/Halyon85/relevo.git && cd relevo
 
 No hace falta una cuenta de desarrollador de Apple. `compilar.sh` la firma con tu certificado "Apple Development" si tenés uno; si no, con una firma local (macOS puede volver a pedir permisos después de cada compilación). La primera vez, macOS pide permiso para mandar avisos y para acceder a discos externos.
 
-Para actualizar, bajá el código nuevo y compilá otra vez: `git pull && ./compilar.sh instalar`. Las versiones que publique Halyon Team (cuando las haya) se actualizan solas con [Sparkle](https://sparkle-project.org): mirá [docs/PUBLICAR.md](docs/PUBLICAR.md).
+La que compilás vos no busca actualizaciones (la cambiarían por la versión publicada): bajá el código nuevo y compilá otra vez, `git pull && ./compilar.sh instalar`. Las versiones descargadas se actualizan solas con [Sparkle](https://sparkle-project.org): mirá [docs/PUBLICAR.md](docs/PUBLICAR.md).
 
 El manual completo, pantalla por pantalla, está en [docs/MANUAL.md](docs/MANUAL.md).
 

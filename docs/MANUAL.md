@@ -261,7 +261,7 @@ Si perdés la clave y no está en ningún lado, lo del portátil no se puede rec
 
   Tus ajustes, tus vínculos y la papelera quedan como estaban.
 
-- **Si instalaste una versión publicada por Halyon Team:** se actualiza sola. Relevo busca versiones nuevas una vez por día y te pregunta antes de instalar. También podés buscar a mano desde el menú, con «Buscar actualizaciones…». Las versiones nuevas vienen firmadas: Relevo solo instala las que firmó Halyon Team.
+- **Si la bajaste de [Releases](https://github.com/Halyon85/relevo/releases):** se actualiza sola. Relevo busca versiones nuevas una vez por día y te pregunta antes de instalar. También podés buscar a mano desde el menú, con «Buscar actualizaciones…». Las versiones nuevas vienen firmadas: Relevo solo instala las que firmó Halyon Team.
 
 ---
 

@@ -6,7 +6,7 @@ Relevo updates itself with [Sparkle](https://sparkle-project.org), but **only bu
 
 - A published build carries two things in its `Info.plist`: the address of the version list (`SUFeedURL`, the *appcast*) and the public half of a signing key (`SUPublicEDKey`).
 - Once a day it reads the list. If there's a newer version, it asks before installing it.
-- Every `.zip` is signed with the private half of the key, which never leaves the publisher's Keychain. Relevo refuses any update that isn't signed with it, even if someone takes over the website.
+- Every `.zip` is signed with the private half of the key, which never leaves the publisher's Keychain. Relevo refuses any update that isn't signed with it, even if someone takes over the GitHub account or the download.
 
 ## Signing without a paid Apple account
 
@@ -49,12 +49,10 @@ You don't need the Apple Developer Program (99 USD a year) to publish, but it ch
    herramientas/publicar-version.sh 0.2.0
    ```
 
-4. Upload what it prints, in this order:
-   1. The `.zip` (and the notes, if you wrote them) to the downloads folder.
-   2. **Last**, `appcast.xml` to its address.
-5. Create the release on GitHub (Releases) with the tag `v0.2.0` and the same `.zip`.
+4. Create the release on GitHub with what it built: the `.zip` and `appcast.xml` go together as files of the release (the script prints the exact `gh release create` command). The app reads the list at `releases/latest/download/appcast.xml`, which always points to the newest release, so no other server is needed.
+5. Release notes on GitHub: the same notes, plus how to open it the first time (see the table above) while the app isn't signed with Developer ID.
 
-`build/publicar/` keeps every version you've built: don't delete it. The list is generated from what's there.
+Each version is built in its own folder, `build/publicar/<version>/`, and its list has only that version: it's enough to update from any older one.
 
 ---
 
@@ -66,7 +64,7 @@ Relevo se actualiza sola con [Sparkle](https://sparkle-project.org), pero **solo
 
 - Una versión publicada lleva en su `Info.plist` la dirección de la lista de versiones (`SUFeedURL`, el *appcast*) y la mitad pública de una clave (`SUPublicEDKey`).
 - Una vez por día mira la lista. Si hay una versión nueva, pregunta antes de instalarla.
-- Cada `.zip` va firmado con la mitad privada de la clave, que nunca sale del Llavero de quien publica. Relevo rechaza cualquier actualización que no esté firmada con ella, aunque alguien tome el sitio.
+- Cada `.zip` va firmado con la mitad privada de la clave, que nunca sale del Llavero de quien publica. Relevo rechaza cualquier actualización que no esté firmada con ella, aunque alguien tome la cuenta de GitHub o la descarga.
 
 ### Firmar sin la cuenta paga de Apple
 
@@ -109,9 +107,7 @@ Con Developer ID y la notarización de Apple, la app abre normal desde el princi
    herramientas/publicar-version.sh 0.2.0
    ```
 
-4. Subí lo que te indica, en este orden:
-   1. El `.zip` (y las novedades, si las escribiste) a la carpeta de descargas.
-   2. **Al final**, `appcast.xml` a su dirección.
-5. Creá la versión en GitHub (Releases) con la etiqueta `v0.2.0` y el mismo `.zip`.
+4. Creá la versión en GitHub con lo que armó: el `.zip` y `appcast.xml` van juntos como archivos de la versión (el script te da el comando `gh release create` exacto). La app lee la lista en `releases/latest/download/appcast.xml`, que siempre apunta a la última versión, así que no hace falta otro servidor.
+5. En las notas de GitHub: las novedades y, mientras no esté firmada con Developer ID, cómo abrirla la primera vez.
 
-`build/publicar/` guarda todas las versiones que armaste: no la borres. La lista se arma con lo que hay ahí.
+Cada versión se arma en su carpeta, `build/publicar/<versión>/`, y su lista lleva solo esa versión: alcanza para actualizar desde cualquiera anterior.

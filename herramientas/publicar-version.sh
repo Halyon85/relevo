@@ -1,15 +1,17 @@
 #!/bin/zsh
 # Arma una versión publicada de Relevo: la app con la búsqueda de actualizaciones prendida, el .zip firmado con la
-# clave de Sparkle y la lista de versiones (appcast.xml). NO sube nada: al final dice qué subir y adónde.
+# clave de Sparkle y la lista de versiones (appcast.xml). NO sube nada: al final dice cómo crear la versión en GitHub,
+# que guarda el .zip y la lista.
 # Uso: herramientas/publicar-version.sh 0.2.0
 # Paso a paso y qué hacer la primera vez: docs/PUBLICAR.md.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-# Dónde viven las versiones publicadas. Si publicás tu propia copia de Relevo, cambiá estas cuatro líneas
-# (y generá tu clave: ver docs/PUBLICAR.md).
-LISTA="https://relevo.halyon.app/appcast.xml"         # la lista de versiones que mira la app
-DESCARGAS="https://relevo.halyon.app/descargas/"      # la carpeta donde quedan los .zip
+# Dónde viven las versiones publicadas: en las versiones (Releases) de GitHub. Cada una lleva su .zip y la lista
+# (appcast.xml); "latest/download" siempre apunta a la de la última, así la app la encuentra sin otro servidor.
+# Si publicás tu propia copia de Relevo, cambiá estas líneas (y generá tu clave: ver docs/PUBLICAR.md).
+REPO="Halyon85/relevo"
+LISTA="https://github.com/$REPO/releases/latest/download/appcast.xml"   # la lista de versiones que mira la app
 CLAVE_PUBLICA="eg5eD1efM+l3Pg6O3UJOv89z2yr6AFuTGRPNtL7YC+0="   # la pública: puede estar a la vista
 CUENTA="team.halyon.relevo"                            # el nombre de la clave privada en el Llavero
 
@@ -23,10 +25,12 @@ VERSION=${1:?"Uso: herramientas/publicar-version.sh <versión, por ejemplo 0.2.0
 IFS=. read -r MAYOR MENOR ARREGLO <<< "$VERSION"
 NUMERO=$(( MAYOR * 10000 + MENOR * 100 + ARREGLO ))
 
-SALIDA=build/publicar
+# Cada versión en su carpeta, sola: la lista lleva solo la última (alcanza para actualizar desde cualquiera anterior).
+SALIDA=build/publicar/$VERSION
+[[ -e "$SALIDA" ]] && { echo "Ya existe $SALIDA: esa versión ya se armó. Usá otro número."; exit 1; }
 mkdir -p "$SALIDA"
 ZIP="$SALIDA/Relevo-$VERSION.zip"
-[[ -e "$ZIP" ]] && { echo "Ya existe $ZIP: esa versión ya se armó. Usá otro número."; exit 1; }
+DESCARGAS="https://github.com/$REPO/releases/download/v$VERSION/"
 
 # El Info.plist de la versión publicada: el de siempre más la versión, la lista y la clave. Busca sola una vez por
 # día y pregunta antes de instalar.
@@ -49,15 +53,13 @@ ditto -c -k --sequesterRsrc --keepParent build/Relevo.app "$ZIP"
 NOTAS=docs/novedades/$VERSION.html
 [[ -f "$NOTAS" ]] && cp "$NOTAS" "$SALIDA/Relevo-$VERSION.html"
 
-# Firma el .zip con la clave privada del Llavero y arma (o actualiza) la lista con todas las versiones de la carpeta.
+# Firma el .zip con la clave privada del Llavero y arma la lista.
 HERRAMIENTAS=.build/artifacts/sparkle/Sparkle/bin
 "$HERRAMIENTAS/generate_appcast" --account "$CUENTA" --download-url-prefix "$DESCARGAS" \
   --link "https://relevo.halyon.app" --maximum-deltas 0 -o "$SALIDA/appcast.xml" "$SALIDA"
 
 echo
-echo "Listo: Relevo $VERSION (compilación $NUMERO), firmada con ${FIRMA:-la firma local}."
-echo "Falta subir (a mano):"
-echo "  • $ZIP  →  $DESCARGAS"
-[[ -f "$NOTAS" ]] && echo "  • $SALIDA/Relevo-$VERSION.html  →  $DESCARGAS"
-echo "  • $SALIDA/appcast.xml  →  $LISTA   (siempre al final, cuando el .zip ya esté subido)"
-echo "Y conviene crear la versión en GitHub (Releases) con la etiqueta v$VERSION y el mismo .zip."
+echo "Listo: Relevo $VERSION (compilación $NUMERO), firmada con ${FIRMA:-la firma local}, en $SALIDA."
+echo "Para publicarla, desde la copia pública (el .zip y la lista van juntos en la versión de GitHub):"
+echo "  gh release create v$VERSION --repo $REPO --title \"Relevo $VERSION\" --notes-file <notas.md> \\"
+echo "    \"$PWD/$ZIP\" \"$PWD/$SALIDA/appcast.xml\""

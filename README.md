@@ -3,7 +3,9 @@
 <p align="center"><b>Your work drive, at home and on the go — always the same.</b><br>
 A tiny macOS menu bar app that keeps a <i>hub</i> (the drive or folder you work on at home) and a <i>portable drive</i> identical, in both directions.</p>
 
-<p align="center"><a href="https://relevo.halyon.app">Website</a> · <a href="docs/MANUAL.en.md">User guide</a> · <a href="LEEME.md">Leer en español</a></p>
+<p align="center"><a href="https://relevo.halyon.app">Website</a> · <a href="docs/MANUAL.en.md">User guide</a> · <a href="https://github.com/Halyon85/relevo/releases/latest">Download</a></p>
+
+<p align="center">🇦🇷 <b><a href="LEEME.md">Leer en español</a></b> · <a href="docs/MANUAL.md">Manual en español</a></p>
 
 ---
 
@@ -35,9 +37,15 @@ Memory: ~30 MB idle, no leaks. A small copy (the everyday case) needs only a few
 - To build: Swift 6 (Xcode or just the Command Line Tools: `xcode-select --install`).
 - The portable drive must be formatted as **APFS** (Disk Utility). exFAT/FAT drives don't keep permissions or links and can be damaged if unplugged.
 
-## Build and install
+## Download
 
-There are no ready-made downloads yet: you build it yourself, it takes a minute.
+Get the latest `Relevo-x.y.z.zip` from [Releases](https://github.com/Halyon85/relevo/releases/latest), unzip it and drag `Relevo.app` to Applications.
+
+> ⚠️ **Install at your own risk.** Relevo is free, open source software without any warranty (see the [license](LICENSE)). It isn't signed with an Apple Developer ID yet, so the first time macOS blocks it: open **System Settings → Privacy & Security**, scroll down and click **Open Anyway** next to Relevo. You only do this once; after that it updates itself (each update is checked against Relevo's signing key). Until it's signed with Developer ID, macOS may ask again for access to removable volumes after an update.
+
+If you'd rather not trust a download, build it yourself from this code: it takes a minute.
+
+## Build and install
 
 ```bash
 git clone https://github.com/Halyon85/relevo.git && cd relevo
@@ -47,7 +55,7 @@ git clone https://github.com/Halyon85/relevo.git && cd relevo
 
 You don't need an Apple developer account. `compilar.sh` signs with your “Apple Development” certificate if you have one; otherwise it signs ad hoc, locally (macOS may then ask for permissions again after each rebuild). The first time, macOS asks for permission to send notifications and to access removable volumes.
 
-To update, pull the latest code and build again: `git pull && ./compilar.sh instalar`. Builds published by Halyon Team (when there are any) will update themselves with [Sparkle](https://sparkle-project.org); see [docs/PUBLICAR.md](docs/PUBLICAR.md).
+A copy you build yourself doesn't look for updates (they would replace it with the published build): pull the latest code and build again, `git pull && ./compilar.sh instalar`. The downloaded builds update themselves with [Sparkle](https://sparkle-project.org); see [docs/PUBLICAR.md](docs/PUBLICAR.md).
 
 The full user guide, screen by screen, is in [docs/MANUAL.en.md](docs/MANUAL.en.md).
 
