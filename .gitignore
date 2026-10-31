@@ -1,0 +1,11 @@
+.build/
+build/
+.DS_Store
+.swiftpm/
+*.sparseimage
+Recursos/AppIcon.iconset/
+*.xcodeproj
+# Notas de trabajo propias: no van al repositorio.
+PENDIENTES.md
+# La copia de la clave privada de Sparkle (docs/PUBLICAR.md): nunca va al repositorio.
+*clave-privada*
