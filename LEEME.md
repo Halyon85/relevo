@@ -3,7 +3,7 @@
 <p align="center"><b>Tu disco de trabajo, en casa y afuera, siempre igual.</b><br>
 Una app chiquita de la barra de menú de macOS que mantiene idénticos, en los dos sentidos, un <i>hub</i> (el disco o la carpeta donde trabajás en casa) y un <i>disco portátil</i>.</p>
 
-<p align="center"><a href="https://relevo.halium.app">Sitio</a> · <a href="docs/MANUAL.md">Manual</a> · <a href="README.md">Read in English</a></p>
+<p align="center"><a href="https://relevo.halyon.app">Sitio</a> · <a href="docs/MANUAL.md">Manual</a> · <a href="README.md">Read in English</a></p>
 
 ---
 

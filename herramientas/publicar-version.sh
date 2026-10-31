@@ -8,8 +8,8 @@ cd "$(dirname "$0")/.."
 
 # Dónde viven las versiones publicadas. Si publicás tu propia copia de Relevo, cambiá estas cuatro líneas
 # (y generá tu clave: ver docs/PUBLICAR.md).
-LISTA="https://relevo.halium.app/appcast.xml"         # la lista de versiones que mira la app
-DESCARGAS="https://relevo.halium.app/descargas/"      # la carpeta donde quedan los .zip
+LISTA="https://relevo.halyon.app/appcast.xml"         # la lista de versiones que mira la app
+DESCARGAS="https://relevo.halyon.app/descargas/"      # la carpeta donde quedan los .zip
 CLAVE_PUBLICA="eg5eD1efM+l3Pg6O3UJOv89z2yr6AFuTGRPNtL7YC+0="   # la pública: puede estar a la vista
 CUENTA="team.halyon.relevo"                            # el nombre de la clave privada en el Llavero
 
@@ -52,7 +52,7 @@ NOTAS=docs/novedades/$VERSION.html
 # Firma el .zip con la clave privada del Llavero y arma (o actualiza) la lista con todas las versiones de la carpeta.
 HERRAMIENTAS=.build/artifacts/sparkle/Sparkle/bin
 "$HERRAMIENTAS/generate_appcast" --account "$CUENTA" --download-url-prefix "$DESCARGAS" \
-  --link "https://relevo.halium.app" --maximum-deltas 0 -o "$SALIDA/appcast.xml" "$SALIDA"
+  --link "https://relevo.halyon.app" --maximum-deltas 0 -o "$SALIDA/appcast.xml" "$SALIDA"
 
 echo
 echo "Listo: Relevo $VERSION (compilación $NUMERO), firmada con ${FIRMA:-la firma local}."

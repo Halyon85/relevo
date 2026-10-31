@@ -3,7 +3,7 @@
 <p align="center"><b>Your work drive, at home and on the go — always the same.</b><br>
 A tiny macOS menu bar app that keeps a <i>hub</i> (the drive or folder you work on at home) and a <i>portable drive</i> identical, in both directions.</p>
 
-<p align="center"><a href="https://relevo.halium.app">Website</a> · <a href="docs/MANUAL.en.md">User guide</a> · <a href="LEEME.md">Leer en español</a></p>
+<p align="center"><a href="https://relevo.halyon.app">Website</a> · <a href="docs/MANUAL.en.md">User guide</a> · <a href="LEEME.md">Leer en español</a></p>
 
 ---
 
