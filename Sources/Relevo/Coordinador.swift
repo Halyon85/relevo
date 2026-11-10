@@ -722,7 +722,23 @@ final class Coordinador: ObservableObject, Identifiable {
             }
             salida += nombres.sorted().map { base + "/" + $0 }.filter { !omitidas.contains($0) }
         }
-        return salida
+        return Self.sinPisarse(salida, carpetas: v.carpetas)
+    }
+
+    /// Que ningún archivo quede en dos carpetas del par: cada una guarda su propia memoria de lo copiado y, con dos, un
+    /// cambio que una ya copió y la otra todavía no aparecía como conflicto (pasó el 31/10/2026: "Proyectos/*" y
+    /// también "Proyectos/Apps/*"). Si una carpeta se abre en sus proyectos ("Apps/*"), no va además como un
+    /// proyecto más: de ella solo van sus archivos sueltos ("Apps/."). Y lo que ya está adentro de otra carpeta del par
+    /// viaja con esa. Lo usan `pares()` y `zonasDe` (que manda a "Apps/." los cambios sueltos de Apps).
+    static func sinPisarse(_ pares: [String], carpetas: [String]) -> [String] {
+        let abiertas = Set(carpetas.filter { $0.hasSuffix("/*") }.map(base))
+        var salida: [String] = []
+        for p in pares {
+            let q = abiertas.contains(p) ? p + "/." : p
+            if !salida.contains(q) { salida.append(q) }
+        }
+        let enteras = salida.filter { !$0.hasSuffix("/.") }
+        return salida.filter { p in !enteras.contains { $0 != p && base(p).estaDentroDe($0) } }
     }
 
     func sincronizador() -> Sincronizador? {
@@ -828,6 +844,7 @@ final class Coordinador: ObservableObject, Identifiable {
                          cambioArriba: UnsafeMutablePointer<Bool>? = nil) -> [String: Zonas] {
         guard let v = vinculo, let raizHub, let raizPortatil else { return [:] }
         let excluidas = Set(ajustes.excluidasEfectivas)
+        let abiertas = Set(v.carpetas.filter { $0.hasSuffix("/*") }.map(Self.base))
         var salida: [String: Zonas] = [:]
         func anotar(_ par: String, _ adentro: [String], _ entera: Bool) {
             let r = adentro.joined(separator: "/")
@@ -851,7 +868,14 @@ final class Coordinador: ObservableObject, Identifiable {
                     let base = c.dropLast(2).split(separator: "/").map(String.init)
                     if partes.count > base.count, Array(partes.prefix(base.count)) == base {
                         let par = (base + [partes[base.count]]).joined(separator: "/")
-                        if !v.omitidas.contains(par) { anotar(par, Array(partes.dropFirst(base.count + 1)), entera) }
+                        if abiertas.contains(par) {
+                            // Se abre en sus proyectos (ver `sinPisarse`): lo de adentro lo anota su "par/*"; acá, solo
+                            // sus archivos sueltos. Si macOS pide mirarla entera, también todos sus proyectos.
+                            if partes.count == base.count + 1 {
+                                salida[par + "/."] = .todo
+                                if entera { for q in pares() where Self.base(q).estaDentroDe(par) { salida[q] = .todo } }
+                            }
+                        } else if !v.omitidas.contains(par) { anotar(par, Array(partes.dropFirst(base.count + 1)), entera) }
                     } else if base.starts(with: partes) {
                         cambioArriba?.pointee = true
                     }
@@ -1180,6 +1204,9 @@ final class Coordinador: ObservableObject, Identifiable {
         pedidos = pedidos.filter { !analizadas.contains($0.carpeta) } + nuevos
         if Notificar.prueba { for p in nuevos { print("PEDIDO \(p.carpeta): \(p.explicacion)") }; fflush(stdout) }
         anotarEsperas(analizadas: analizadas)
+        if let raizHub, let raizPortatil {
+            Historial.shared.olvidarConflictosSinOtraVersion(vinculo: id, raizHub: raizHub, raizPortatil: raizPortatil)
+        }
         if bien || !nuevos.isEmpty {
             ultima = Date()
             UserDefaults.standard.set(ultima, forKey: "ultima-\(id)")

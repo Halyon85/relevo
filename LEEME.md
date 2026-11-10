@@ -39,7 +39,7 @@ Memoria: ~30 MB en reposo, sin fugas. Una copia chica (lo de todos los días) us
 
 Bajá el último `Relevo-x.y.z.zip` de [Releases](https://github.com/Halyon85/relevo/releases/latest), descomprimilo y arrastrá `Relevo.app` a Aplicaciones.
 
-> ⚠️ **Instalala bajo tu propio riesgo.** Relevo es software libre y gratis, sin ninguna garantía (mirá la [licencia](LICENSE)). Todavía no está firmada con un Developer ID de Apple, así que la primera vez macOS la bloquea: abrí **Ajustes del Sistema → Privacidad y seguridad**, bajá hasta el final y tocá **Abrir igual** al lado de Relevo. Se hace una sola vez; después se actualiza sola (cada actualización se comprueba con la clave de Relevo). Hasta que esté firmada con Developer ID, macOS puede volver a pedir el permiso de los discos externos después de una actualización.
+> ⚠️ **Instalala bajo tu propio riesgo.** Relevo es software libre y gratis, sin ninguna garantía (mirá la [licencia](LICENSE)). Desde la 0.1.2 está firmada con Developer ID y aprobada por Apple, así que abre normal y conserva los permisos al actualizarse. Se actualiza sola (cada actualización se comprueba con la clave de Relevo).
 
 Si preferís no confiar en una descarga, compilala vos con este código: tarda un minuto.
 
@@ -67,6 +67,7 @@ herramientas/prueba-desenchufar.sh 12   # desenchufes forzados a mitad de copia,
 herramientas/prueba-app.sh              # la app entera de punta a punta, memoria y fugas
 herramientas/prueba-cifrado.sh          # cifrado sobre un disco de ensayo
 herramientas/prueba-inteligente.sh      # revisar solo lo que cambió (Relevo cerrado, afuera, sin registro, corte de luz) y frenar la revisión diaria al irte
+herramientas/prueba-anidadas.sh         # carpetas elegidas una adentro de otra ("Proyectos/*" y "Proyectos/Apps/*") sin conflictos falsos
 herramientas/prueba-discos.sh           # nombres de los discos (al revés, afuera, “Me voy”, expulsar, apps abiertas en el portátil), borrados que se aplican solos y abrir solo un portátil cifrado
 ```
 

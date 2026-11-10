@@ -18,7 +18,7 @@ You don't need the Apple Developer Program (99 USD a year) to publish, but it ch
 | Updates through Sparkle | Install normally, checked with the Sparkle key | Install normally |
 | Permissions after an update | macOS may ask again for access to removable volumes | Kept |
 
-`publicar-version.sh` uses a “Developer ID Application” certificate if it finds one, and the local signature otherwise. It never uses “Apple Development”: that one is for testing on your own Macs, not for handing out.
+`publicar-version.sh` uses a “Developer ID Application” certificate if it finds one, and the local signature otherwise. It never uses “Apple Development”: that one is for testing on your own Macs, not for handing out. With Developer ID it also sends the app to Apple (notarization), waits for the approval and staples it before making the `.zip`. That needs, once, an app-specific password from [account.apple.com](https://account.apple.com) stored in the Keychain: `xcrun notarytool store-credentials dixity --apple-id YOUR_APPLE_ID --team-id YOUR_TEAM_ID` (the same Apple account as Dixity and Alero, so one profile serves all three; `RELEVO_NOTARIO=<name>` uses another one).
 
 ## The first time
 
@@ -76,7 +76,7 @@ Sin el Apple Developer Program (99 USD por año) se puede publicar igual, con es
 
 Con Developer ID y la notarización de Apple, la app abre normal desde el principio y los permisos no se pierden.
 
-`publicar-version.sh` firma con un certificado «Developer ID Application» si lo encuentra y, si no, con la firma local. Nunca usa «Apple Development»: ese es para probar en tus Macs, no para repartir.
+`publicar-version.sh` firma con un certificado «Developer ID Application» si lo encuentra y, si no, con la firma local. Nunca usa «Apple Development»: ese es para probar en tus Macs, no para repartir. Con Developer ID además manda la app a Apple (notarización), espera la aprobación y le pega el sello antes de armar el `.zip`. Para eso hace falta, una vez, una contraseña de app de [account.apple.com](https://account.apple.com) guardada en el Llavero: `xcrun notarytool store-credentials dixity --apple-id TU_APPLE_ID --team-id TU_EQUIPO` (la misma cuenta de Apple que Dixity y Alero, así que un perfil sirve para las tres; `RELEVO_NOTARIO=<nombre>` usa otro).
 
 ### La primera vez
 

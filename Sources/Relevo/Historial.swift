@@ -67,6 +67,24 @@ final class Historial: ObservableObject {
         guardar()
     }
 
+    /// Los conflictos que se resolvieron solos: la otra versión ya no está en ninguno de los dos discos (la borraste,
+    /// la mandaste a la Papelera o la renombraste). Si no, quedaban para siempre en "Dos versiones" y "Usar la otra" no
+    /// hacía nada (pasó el 31/10/2026). Lo llama el coordinador al terminar cada vuelta, con los dos discos conectados.
+    func olvidarConflictosSinOtraVersion(vinculo: String, raizHub: String, raizPortatil: String) {
+        let fm = FileManager.default
+        var cambio = false
+        for i in lista.indices where lista[i].vinculo == vinculo {
+            for ruta in lista[i].conflictosAbiertos {
+                guard let otra = lista[i].cambios?.first(where: { $0.tipo == .conflicto && $0.ruta == ruta })?.otraVersion else { continue }
+                let relativa = "/" + lista[i].carpeta + "/" + otra
+                guard !fm.fileExists(atPath: raizHub + relativa), !fm.fileExists(atPath: raizPortatil + relativa) else { continue }
+                lista[i].resueltos = (lista[i].resueltos ?? []) + [ruta]
+                cambio = true
+            }
+        }
+        if cambio { guardar() }
+    }
+
     func borrarTodo() {
         lista = []
         try? FileManager.default.removeItem(at: Self.archivo)

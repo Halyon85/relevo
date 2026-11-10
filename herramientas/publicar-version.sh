@@ -14,6 +14,9 @@ REPO="Halyon85/relevo"
 LISTA="https://github.com/$REPO/releases/latest/download/appcast.xml"   # la lista de versiones que mira la app
 CLAVE_PUBLICA="eg5eD1efM+l3Pg6O3UJOv89z2yr6AFuTGRPNtL7YC+0="   # la pública: puede estar a la vista
 CUENTA="team.halyon.relevo"                            # el nombre de la clave privada en el Llavero
+# La clave de notarización en el Llavero (xcrun notarytool store-credentials, ver docs/PUBLICAR.md). Es la misma
+# cuenta de Apple que Dixity y Alero, así que se usa el perfil de Dixity; RELEVO_NOTARIO=<nombre> usa otro.
+PERFIL_NOTARIO=${RELEVO_NOTARIO:-dixity}
 
 VERSION=${1:?"Uso: herramientas/publicar-version.sh <versión, por ejemplo 0.2.0>"}
 [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "La versión tiene que ser como 0.2.0"; exit 1; }
@@ -45,6 +48,22 @@ $PB -c "Add :SUFeedURL string $LISTA" -c "Add :SUPublicEDKey string $CLAVE_PUBLI
 # "Apple Development": ese es para probar en tus Macs, no para repartir.
 FIRMA=$(security find-identity -v -p codesigning | awk -F'"' '/Developer ID Application/ {print $2; exit}')
 RELEVO_INFO="$INFO" RELEVO_FIRMA="${FIRMA:--}" ./compilar.sh
+
+# Con Developer ID, Apple revisa la app (notarización) y le pega su sello: así abre sin «Abrir igual», aun sin internet.
+# El .zip para Apple va fuera de $SALIDA: generate_appcast toma todos los .zip que encuentra ahí.
+if [[ -n "$FIRMA" ]]; then
+  xcrun notarytool history --keychain-profile "$PERFIL_NOTARIO" >/dev/null 2>&1 || {
+    echo "Falta la clave de notarización «$PERFIL_NOTARIO» en el Llavero: ver docs/PUBLICAR.md."; exit 1; }
+  PARA_APPLE="build/publicar/para-notarizar-$VERSION.zip"
+  ditto -c -k --sequesterRsrc --keepParent build/Relevo.app "$PARA_APPLE"
+  xcrun notarytool submit "$PARA_APPLE" --keychain-profile "$PERFIL_NOTARIO" --wait --timeout 30m \
+    | tee "build/publicar/notarizacion-$VERSION.txt"
+  grep -q "status: Accepted" "build/publicar/notarizacion-$VERSION.txt" || {
+    echo "Apple no aprobó la app: mirá el detalle con xcrun notarytool log <id> --keychain-profile $PERFIL_NOTARIO"; exit 1; }
+  rm "$PARA_APPLE"
+  xcrun stapler staple build/Relevo.app
+  spctl --assess --type execute build/Relevo.app || { echo "macOS no acepta la app notarizada: no se publica."; exit 1; }
+fi
 
 # El .zip (ditto conserva los enlaces y permisos de adentro de la app, cosa que zip no siempre hace).
 ditto -c -k --sequesterRsrc --keepParent build/Relevo.app "$ZIP"

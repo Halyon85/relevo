@@ -41,7 +41,7 @@ Memory: ~30 MB idle, no leaks. A small copy (the everyday case) needs only a few
 
 Get the latest `Relevo-x.y.z.zip` from [Releases](https://github.com/Halyon85/relevo/releases/latest), unzip it and drag `Relevo.app` to Applications.
 
-> ⚠️ **Install at your own risk.** Relevo is free, open source software without any warranty (see the [license](LICENSE)). It isn't signed with an Apple Developer ID yet, so the first time macOS blocks it: open **System Settings → Privacy & Security**, scroll down and click **Open Anyway** next to Relevo. You only do this once; after that it updates itself (each update is checked against Relevo's signing key). Until it's signed with Developer ID, macOS may ask again for access to removable volumes after an update.
+> ⚠️ **Install at your own risk.** Relevo is free, open source software without any warranty (see the [license](LICENSE)). Since 0.1.2 it's signed with an Apple Developer ID and notarized by Apple, so it opens normally and keeps its permissions across updates. It updates itself (each update is checked against Relevo's signing key).
 
 If you'd rather not trust a download, build it yourself from this code: it takes a minute.
 
@@ -69,6 +69,7 @@ herramientas/prueba-desenchufar.sh 12   # forced unplugs mid-copy, both sides
 herramientas/prueba-app.sh              # the whole app end to end, memory and leaks
 herramientas/prueba-cifrado.sh          # encryption on a test image
 herramientas/prueba-inteligente.sh      # checking only what changed (Relevo closed, away, no log, power cut) and stopping the daily check when you leave
+herramientas/prueba-anidadas.sh         # folders chosen one inside another ("Proyectos/*" and "Proyectos/Apps/*") without false conflicts
 herramientas/prueba-discos.sh           # drive names (swapped, away, “I'm leaving”, eject, apps open on the portable drive), deletions applied automatically and auto-unlocking an encrypted portable drive
 ```
 

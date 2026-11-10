@@ -1,5 +1,7 @@
 #!/bin/zsh
-# Compila Relevo, arma Relevo.app y la firma con el certificado de desarrollo (así los permisos no se pierden).
+# Compila Relevo, arma Relevo.app y la firma con un certificado de Apple (así los permisos no se pierden).
+# Sin RELEVO_FIRMA usa el Developer ID si está (la misma firma que las versiones publicadas: macOS no pide los permisos
+# de nuevo al actualizar) y, si no, "Apple Development" (lleva tu correo: solo para probar en tus Macs).
 # Uso: ./compilar.sh            → deja la app en build/Relevo.app
 #      ./compilar.sh instalar   → además la copia a /Applications y la abre
 # Para publicar una versión, `herramientas/publicar-version.sh` la llama con RELEVO_INFO (un Info.plist con la versión,
@@ -25,12 +27,18 @@ install_name_tool -add_rpath "@executable_path/../Frameworks" "$APP/Contents/Mac
 [[ -f Recursos/AppIcon.icns ]] && cp Recursos/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 strip -x "$APP/Contents/MacOS/Relevo" 2>/dev/null || true
 
-IDENTIDAD=${RELEVO_FIRMA-$(security find-identity -v -p codesigning | awk -F'"' '/Apple Development/ {print $2; exit}')}
+CERTIFICADOS=$(security find-identity -v -p codesigning)
+DEVELOPER_ID=$(awk -F'"' '/Developer ID Application/ {print $2; exit}' <<< "$CERTIFICADOS")
+DESARROLLO=$(awk -F'"' '/Apple Development/ {print $2; exit}' <<< "$CERTIFICADOS")
+IDENTIDAD=${RELEVO_FIRMA-${DEVELOPER_ID:-$DESARROLLO}}
 IDENTIDAD=${IDENTIDAD:--}
+# El sello de hora de Apple solo hace falta con Developer ID (la notarización lo exige; necesita internet).
+SELLO=--timestamp=none
+[[ "$IDENTIDAD" == *"Developer ID"* ]] && SELLO=--timestamp
 # Primero lo de adentro de Sparkle (de adentro hacia afuera) y al final la app, todo con la misma firma.
 SPARKLE="$APP/Contents/Frameworks/Sparkle.framework/Versions/B"
 for pieza in "$SPARKLE/Autoupdate" "$SPARKLE/Updater.app" "$APP/Contents/Frameworks/Sparkle.framework"; do
-  codesign --force --options runtime --timestamp=none --sign "$IDENTIDAD" "$pieza"
+  codesign --force --options runtime "$SELLO" --sign "$IDENTIDAD" "$pieza"
 done
 # Con la firma local macOS solo deja cargar bibliotecas del mismo equipo de Apple, y la firma local no tiene equipo:
 # sin este permiso, Relevo no arranca porque no puede abrir Sparkle. Con un certificado de Apple no hace falta.
@@ -40,7 +48,7 @@ if [[ "$IDENTIDAD" == "-" ]]; then
   cp Recursos/Relevo.entitlements "$PERMISOS"
   /usr/libexec/PlistBuddy -c "Add :com.apple.security.cs.disable-library-validation bool true" "$PERMISOS"
 fi
-codesign --force --options runtime --timestamp=none \
+codesign --force --options runtime "$SELLO" \
   --entitlements "$PERMISOS" \
   --sign "$IDENTIDAD" "$APP"
 [[ "$IDENTIDAD" == "-" ]] && echo "Firmada con: firma local (ad-hoc)" || echo "Firmada con: $IDENTIDAD"
