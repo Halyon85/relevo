@@ -1,7 +1,7 @@
 #!/bin/zsh
 # Prueba de la revisión inteligente con discos de ensayo (nunca con discos reales): Relevo revisa solo lo que cambió
 # según el registro de cambios de macOS, también con Relevo cerrado y con el portátil usado afuera; si el registro no
-# sirve, revisa todo; la revisión completa de fondo se frena sola si te vas.
+# sirve, revisa todo; la revisión completa de fondo se frena sola si te vas y no se repite si no pudo cerrar.
 # Uso: herramientas/prueba-inteligente.sh
 set -uo pipefail
 cd "$(dirname "$0")/.."
@@ -92,6 +92,15 @@ grep -q "^ANALISIS Proyectos/A zonas" "$LOG" && grep -q "^ANALISIS Proyectos/D e
 
 rm -f "$CASA/Library/Application Support/Relevo/pares/intel/marcas.json"
 vuelta; [[ "$REVISA" == "REVISA todo" ]] && ok "Sin marca (registro perdido): revisa todo" || mal "Sin marca: $REVISA"
+
+# Una carpeta espera el OK con copias pendientes: la revisión completa recorre todo, no puede cerrar y lo anota como
+# intento del día (17/11/2026: sin eso se repetía cada media hora, día y noche).
+mv $H/Proyectos/A $H/A-aparte; mkdir $H/Proyectos/A; echo nuevo > $H/Proyectos/A/nuevo.txt; sleep 2
+: > "$LOG"; orden revision-completa
+esperar 60 'grep -q "^PEDIDO Proyectos/A" "$LOG"' && ok "Con casi todo borrado y algo nuevo, pide el OK" || mal "No pidió el OK ($(grep ESTADO "$LOG" | tail -1))"
+esperar 30 'grep -q "REVISION COMPLETA sin cerrar" "$LOG"' && ok "La revisión completa sin cerrar queda como la del día" || mal "No anotó el intento de la revisión completa"
+# Vuelve todo a su lugar: ya no hay nada que borrar y lo que sigue arranca al día.
+rm -rf $H/Proyectos/A; mv $H/A-aparte $H/Proyectos/A; sleep 2
 
 # La revisión completa de fondo se frena sola si te vas.
 python3 -I - <<'PY'

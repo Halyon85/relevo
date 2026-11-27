@@ -654,6 +654,15 @@ struct Escenarios {
         espero(r.completo)
         espero(b.leer(.portatil, "a.txt") == "contenido bueno")
         espero(b.papelera(.portatil) == ["a.txt"])
+
+        // Archivo más grande que el bloque de lectura (256 KB): igual, y luego dañado en el último byte.
+        var grande = Data(repeating: 0x41, count: 600 * 1024)
+        try grande.write(to: URL(fileURLWithPath: b.ruta(.hub, "grande.bin")))
+        try grande.write(to: URL(fileURLWithPath: b.ruta(.portatil, "grande.bin")))
+        espero(Sincronizador.mismoContenido(b.ruta(.hub, "grande.bin"), b.ruta(.portatil, "grande.bin")))
+        grande[grande.count - 1] = 0x42
+        try grande.write(to: URL(fileURLWithPath: b.ruta(.portatil, "grande.bin")))
+        espero(!Sincronizador.mismoContenido(b.ruta(.hub, "grande.bin"), b.ruta(.portatil, "grande.bin")))
     }
 
     func ignoradasPorGitignore() throws {

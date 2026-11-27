@@ -21,7 +21,7 @@ var mal = 0
 let inicio = Date()
 // Las de siempre, las de la revisión por zonas y otra vez las de siempre copiando por zonas (con avisos de todas las
 // carpetas: tiene que dar lo mismo que mirar todo).
-let todas = Escenarios.todas + Escenarios.porZonas + Escenarios.seguridad + Escenarios.todas.map { nombre, prueba in
+let todas = Escenarios.todas + Escenarios.porZonas + Escenarios.seguridad + Escenarios.deFondo + Escenarios.todas.map { nombre, prueba in
     ("[por zonas] " + nombre, { Banco.porZonas = true; defer { Banco.porZonas = false }; try prueba() })
 }
 for (nombre, prueba) in todas where filtro == nil || nombre.localizedCaseInsensitiveContains(filtro!) {

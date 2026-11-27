@@ -40,10 +40,15 @@ final class Delegado: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func applicationWillTerminate(_ n: Notification) {
+        Historial.shared.guardarPendienteAhora()
         Cierre.cerrandoBien()
     }
 
     func applicationDidFinishLaunching(_ n: Notification) {
+        // Relevo vive en la barra de menú sin ventanas abiertas: macOS nunca debe cerrarla por "sin ventanas" (TAL).
+        ProcessInfo.processInfo.disableAutomaticTermination("Relevo sincroniza discos en segundo plano")
+        ProcessInfo.processInfo.disableSuddenTermination()
+        Bitacora.anotar("Arrancó Relevo (pid \(getpid()), cierre anterior \(Cierre.anteriorFueLimpio ? "limpio" : "de golpe"))")
         gestor = Gestor()
         // Discos que aparecen bloqueados (cifrados): cada vínculo intenta abrir el suyo con la clave del llavero.
         MonitorDiscos.shared.alAparecer = { [weak self] in self?.gestor.coordinadores.forEach { $0.intentarDesbloquear() } }
@@ -283,6 +288,7 @@ final class Delegado: NSObject, NSApplicationDelegate, NSWindowDelegate {
         return a.runModal() == .alertFirstButtonReturn
     }
     @objc private func salir() {
+        Cierre.motivo = "menú Salir"
         gestor.cancelarTodo()
         NSApp.terminate(nil)
     }

@@ -114,3 +114,28 @@ extension String {
         carpeta.isEmpty || self == carpeta || hasPrefix(carpeta + "/")
     }
 }
+
+/// Cuándo le toca a la revisión completa de fondo (la de cada día y la de un minuto después de volver con el
+/// portátil). Vive en el motor para poder probarla sin la app. La usa `Coordinador.revisionCompletaSiToca`.
+public enum RevisionDeFondo {
+    /// Cada cuánto corre la de cada día, y cuánto espera para reintentar una que recorrió todo y no pudo cerrar.
+    public static let cadaDia: TimeInterval = 20 * 3600
+    /// La de la vuelta con el portátil no se repite si hubo una completa hace menos que esto.
+    public static let margenAlVolver: TimeInterval = 30 * 60
+    /// La de cada día espera a que la Mac lleve este rato sin uso (o a la madrugada).
+    public static let sinUso: TimeInterval = 20 * 60
+
+    /// - `desdeLaUltimaBien`: segundos desde la última que terminó sin nada pendiente (`.infinity` si nunca hubo).
+    /// - `desdeElUltimoIntento`: segundos desde la última que recorrió todas las carpetas pero no pudo cerrar (por
+    ///   ejemplo, una carpeta esperando tu OK con copias pendientes). Sin esto, el reloj de cada media hora la
+    ///   repetía día y noche hasta que respondieras (17/11/2026: 48 revisiones completas por día en vez de una).
+    /// - `hora`: la hora del día (0 a 23). `inactiva`: segundos sin tocar el teclado ni el mouse.
+    public static func toca(alVolver: Bool, desdeLaUltimaBien: TimeInterval, desdeElUltimoIntento: TimeInterval,
+                            hora: Int, inactiva: TimeInterval) -> Bool {
+        // A propósito: la de la vuelta no mira el último intento. Cubre lo que macOS no anota al enchufar el
+        // portátil, y corre una sola vez por vuelta.
+        if alVolver { return desdeLaUltimaBien > margenAlVolver }
+        guard desdeLaUltimaBien > cadaDia, desdeElUltimoIntento > cadaDia else { return false }
+        return (2...5).contains(hora) || inactiva > sinUso
+    }
+}

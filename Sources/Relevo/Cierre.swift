@@ -8,6 +8,8 @@ import Foundation
 enum Cierre {
     private static let clave = "cerradaBien"
     private static var senal: DispatchSourceSignal?
+    /// Por qué se cerró (menú Salir, señal SIGTERM o cierre externo): queda en la bitácora.
+    static var motivo: String?
 
     /// Se lee una sola vez, al arrancar: queda anotado "abierta" hasta que se cierre bien.
     static let anteriorFueLimpio: Bool = {
@@ -23,7 +25,10 @@ enum Cierre {
         _ = anteriorFueLimpio
         signal(SIGTERM, SIG_IGN)
         let s = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
-        s.setEventHandler { NSApp.terminate(nil) }
+        s.setEventHandler {
+            motivo = motivo ?? "señal SIGTERM"
+            NSApp.terminate(nil)
+        }
         s.resume()
         senal = s
     }
@@ -31,5 +36,6 @@ enum Cierre {
     static func cerrandoBien() {
         UserDefaults.standard.set(true, forKey: clave)
         UserDefaults.standard.synchronize()
+        Bitacora.anotarAhora("Cerrando Relevo (pid \(getpid()), motivo: \(motivo ?? "cierre externo o del sistema"))")
     }
 }

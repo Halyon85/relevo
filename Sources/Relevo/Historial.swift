@@ -44,6 +44,10 @@ final class Historial: ObservableObject {
     static let shared = Historial()
     private static let archivo = Ajustes.carpetaApp.appendingPathComponent("historial.json")
     private static let tope = 300
+    /// Cola serial: antes se guardaba en `DispatchQueue.global`, apilando decenas de escrituras de ~9 MB a la vez.
+    private let colaGuardar = DispatchQueue(label: "team.halyon.relevo.historial", qos: .utility)
+    private var trabajoGuardar: DispatchWorkItem?
+    private var guardadoPendiente = false
 
     @Published private(set) var lista: [Movimiento] = []
 
@@ -86,14 +90,51 @@ final class Historial: ObservableObject {
     }
 
     func borrarTodo() {
+        trabajoGuardar?.cancel()
+        trabajoGuardar = nil
+        guardadoPendiente = false
         lista = []
-        try? FileManager.default.removeItem(at: Self.archivo)
+        colaGuardar.async { try? FileManager.default.removeItem(at: Self.archivo) }
     }
 
     private func guardar() {
-        let lista = self.lista
-        DispatchQueue.global(qos: .utility).async {
-            try? JSONEncoder().encode(lista).write(to: Self.archivo, options: .atomic)
+        trabajoGuardar?.cancel()
+        guardadoPendiente = true
+        if Notificar.prueba {
+            let copia = self.lista
+            guardadoPendiente = false
+            colaGuardar.async { Self.escribir(copia) }
+            return
+        }
+        let trabajo = DispatchWorkItem { [weak self] in
+            guard let self, self.guardadoPendiente else { return }
+            let copia = self.lista
+            self.guardadoPendiente = false
+            self.trabajoGuardar = nil
+            self.colaGuardar.async { Self.escribir(copia) }
+        }
+        trabajoGuardar = trabajo
+        // En una vuelta de 39 carpetas llegan decenas de movimientos seguidos: se juntan en una sola escritura.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: trabajo)
+    }
+
+    /// Al cerrar la app: escribe ya lo pendiente para no perder el último movimiento.
+    func guardarPendienteAhora() {
+        trabajoGuardar?.cancel()
+        trabajoGuardar = nil
+        guard guardadoPendiente else {
+            colaGuardar.sync {}
+            return
+        }
+        let copia = self.lista
+        guardadoPendiente = false
+        colaGuardar.sync { Self.escribir(copia) }
+    }
+
+    private static func escribir(_ lista: [Movimiento]) {
+        autoreleasepool {
+            guard let datos = try? JSONEncoder().encode(lista) else { return }
+            try? datos.write(to: Self.archivo, options: .atomic)
         }
     }
 

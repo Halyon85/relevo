@@ -160,6 +160,8 @@ final class Coordinador: ObservableObject, Identifiable {
     private var traidoEnLlegada: String?
     /// Si alguna vuelta de una cadena (copias que esperaban a otra) salió mal: así nadie recibe "bien" por una ajena.
     private var cadenaBien = true
+    /// La última vuelta recorrió todas las carpetas sin que la frenaran ni se fuera un disco (haya cerrado bien o no).
+    private var recorrioTodo = false
     /// La última copia dejó algo sin copiar (un problema, un corte): "Me voy" revisa todo en vez de solo lo pendiente.
     private var quedoAlgo = true
     /// Proyectos con commits distintos ya avisados (para no repetir el aviso en cada vuelta).
@@ -913,6 +915,12 @@ final class Coordinador: ObservableObject, Identifiable {
         get { UserDefaults.standard.object(forKey: "completa-\(id)") as? Date }
         set { UserDefaults.standard.set(newValue, forKey: "completa-\(id)") }
     }
+    /// Cuándo fue la última revisión completa que recorrió todas las carpetas pero no pudo cerrar (algo espera tu OK
+    /// con copias pendientes, o una carpeta dio un problema). Cuenta como la del día: ver `RevisionDeFondo.toca`.
+    private var ultimoIntentoCompleta: Date? {
+        get { UserDefaults.standard.object(forKey: "intento-completa-\(id)") as? Date }
+        set { UserDefaults.standard.set(newValue, forKey: "intento-completa-\(id)") }
+    }
     /// La próxima revisión inteligente mira todo, sin atajos: Relevo no se cerró bien (corte de luz, Mac colgada) o un
     /// disco se fue sin expulsarlo, y el registro de cambios de macOS puede no tener lo último. Se apaga cuando una
     /// revisión de todo termina bien. Sobrevive a cerrar Relevo.
@@ -1030,14 +1038,21 @@ final class Coordinador: ObservableObject, Identifiable {
     /// "Listo"; esta corre después, sin apuro. No escribe nada si todo
     /// está igual; si te vas mientras corre, se frena sola (`frenarRevisionDeFondo`). Lo llaman el reloj de cada media
     /// hora y la vuelta del portátil.
+    /// Si recorre todo pero no puede cerrar (una carpeta espera tu OK con copias pendientes), cuenta como la del día
+    /// y no se repite cada media hora (`ultimoIntentoCompleta`). Si la frenaste o se fue un disco, sí se reintenta.
     func revisionCompletaSiToca(alVolver: Bool = false, forzar: Bool = false) {
         guard activo, ajustes.datos.revisionDiaria, conectados, !trabadoAlReves, !corriendo, !revisandoDeFondo, !expulsandoPortatil,
               estado != .expulsando, !(vinculo?.pausado ?? false) else { return }
-        let hace = ultimaCompleta.map { Date().timeIntervalSince($0) } ?? .infinity
-        let hora = Calendar.current.component(.hour, from: Date())
-        let toca = alVolver ? hace > 30 * 60 : hace > 20 * 3600 && ((2...5).contains(hora) || Energia.inactiva > 20 * 60)
+        let ahora = Date()
+        let toca = RevisionDeFondo.toca(
+            alVolver: alVolver,
+            desdeLaUltimaBien: ultimaCompleta.map { ahora.timeIntervalSince($0) } ?? .infinity,
+            desdeElUltimoIntento: ultimoIntentoCompleta.map { ahora.timeIntervalSince($0) } ?? .infinity,
+            hora: Calendar.current.component(.hour, from: ahora), inactiva: Energia.inactiva)
         guard toca || forzar else { return }
         revisandoDeFondo = true
+        // Si esta no llega a arrancar, que no herede el "recorrió todo" de una vuelta anterior.
+        recorrioTodo = false
         let nuevas = [raizHub, raizPortatil].map { $0.flatMap(Historia.marca) }
         if Notificar.prueba { print("REVISION COMPLETA"); fflush(stdout) }
         sincronizar { [weak self] bien in
@@ -1047,6 +1062,11 @@ final class Coordinador: ObservableObject, Identifiable {
                 self.ultimaCompleta = Date()
                 self.revisarTodoLaProxima = false
                 if let h = nuevas[0], let p = nuevas[1] { self.marcasGuardadas = MarcasGuardadas(hub: h, portatil: p) }
+            } else if self.recorrioTodo {
+                // Miró todo y lo que falta no se arregla revisando de nuevo: hasta mañana (o hasta que vuelvas).
+                self.ultimoIntentoCompleta = Date()
+                Bitacora.anotar("Revisión completa: recorrió todo pero quedó algo pendiente; no se repite hasta mañana")
+                if Notificar.prueba { print("REVISION COMPLETA sin cerrar"); fflush(stdout) }
             }
         }
     }
@@ -1199,6 +1219,7 @@ final class Coordinador: ObservableObject, Identifiable {
                                alDia: Bool, enUso: [String: Zonas]) {
         corriendo = false
         cancelador = nil
+        recorrioTodo = completas && conectados
         enUsoPendiente = enUsoPendiente.filter { !analizadas.contains($0.key) }.merging(enUso) { $1 }
         // Solo cambian los pedidos de las carpetas que se revisaron (si se cortó a mitad, los otros siguen).
         pedidos = pedidos.filter { !analizadas.contains($0.carpeta) } + nuevos
@@ -1585,14 +1606,22 @@ final class Coordinador: ObservableObject, Identifiable {
         revision.automatica = automatica
         revisionAFondo = revision
         let lista = pares()
+        let desde = Date()
+        Bitacora.anotar("Revisión a fondo (\(automatica ? "mensual" : "a mano")): empieza (\(lista.count) carpetas)")
         cola.async { [weak self] in
             var distintos: [(String, String)] = []
             for (i, carpeta) in lista.enumerated() {
                 if revision.cancelador.cancelado { break }
                 DispatchQueue.main.async { revision.carpeta = carpeta; revision.fraccionCarpetas = Double(i) / Double(max(1, lista.count)) }
-                let d = (try? s.revisarAFondo(carpeta, cancelador: revision.cancelador)) ?? []
+                let d: [String] = autoreleasepool {
+                    (try? s.revisarAFondo(carpeta, cancelador: revision.cancelador)) ?? []
+                }
                 distintos += d.map { (carpeta, $0) }
+                malloc_zone_pressure_relief(nil, 0)
             }
+            let duro = Date().timeIntervalSince(desde)
+            Bitacora.anotar(String(format: "Revisión a fondo %@ en %.1f s (%ld diferencia(s))",
+                                   revision.cancelador.cancelado ? "cancelada" : "terminada", duro, distintos.count))
             DispatchQueue.main.async {
                 revision.terminada = true
                 revision.distintos = distintos.map { RevisionAFondo.Diferencia(carpeta: $0.0, ruta: $0.1) }

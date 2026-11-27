@@ -439,20 +439,30 @@ public final class Sincronizador: @unchecked Sendable {
     /// que se dañaron con el tiempo. Lento: lee todo. Devuelve las rutas que no coinciden.
     public func revisarAFondo(_ carpeta: String, cancelador: Cancelador = Cancelador(),
                               progreso: ((Int64, Int64) -> Void)? = nil) throws -> [String] {
-        let solo = carpeta.hasSuffix("/.")
-        let r = reglas(para: carpeta)
-        let hub = try Escaner.fotografiar(raiz(.hub, carpeta), reglas: r, soloArchivos: solo)
-        let portatil = try Escaner.fotografiar(raiz(.portatil, carpeta), reglas: r, soloArchivos: solo)
-        let comunes = hub.entradas.filter { r, e in e.tipo == .archivo && portatil.entradas[r]?.tamano == e.tamano }
-        let total = comunes.values.reduce(Int64(0)) { $0 + $1.tamano }
+        // Arma la lista de archivos a comparar y suelta enseguida las dos fotos (en carpetas grandes son cientos de MB).
+        let lista: [(ruta: String, tamano: Int64)] = try autoreleasepool {
+            let solo = carpeta.hasSuffix("/.")
+            let r = reglas(para: carpeta)
+            let hub = try Escaner.fotografiar(raiz(.hub, carpeta), reglas: r, soloArchivos: solo)
+            let portatil = try Escaner.fotografiar(raiz(.portatil, carpeta), reglas: r, soloArchivos: solo)
+            return hub.entradas
+                .compactMap { ruta, e -> (String, Int64)? in
+                    guard e.tipo == .archivo, portatil.entradas[ruta]?.tamano == e.tamano else { return nil }
+                    return (ruta, e.tamano)
+                }
+                .sorted { $0.0 < $1.0 }
+        }
+        let total = lista.reduce(Int64(0)) { Rutas.sumar($0, $1.tamano) }
         var hecho: Int64 = 0
         var distintos: [String] = []
-        for (r, e) in comunes.sorted(by: { $0.key < $1.key }) {
+        let baseHub = raiz(.hub, carpeta) + "/"
+        let basePortatil = raiz(.portatil, carpeta) + "/"
+        for (ruta, tamano) in lista {
             if cancelador.cancelado { break }
-            if !Sincronizador.mismoContenido(raiz(.hub, carpeta) + "/" + r, raiz(.portatil, carpeta) + "/" + r) {
-                distintos.append(r)
+            if !Sincronizador.mismoContenido(baseHub + ruta, basePortatil + ruta) {
+                distintos.append(ruta)
             }
-            hecho += e.tamano
+            hecho = Rutas.sumar(hecho, tamano)
             progreso?(hecho, total)
         }
         return distintos
@@ -478,15 +488,47 @@ public final class Sincronizador: @unchecked Sendable {
         return Int64.max
     }
 
-    /// Compara byte a byte (solo se usa cuando tamaño igual pero fecha distinta, o para revisar copias cortadas).
+    /// Compara byte a byte (solo se usa cuando tamaño igual pero fecha distinta, o para revisar copias cortadas, y en la
+    /// revisión a fondo). Lee directo con POSIX en dos buffers fijos reutilizados: antes usaba `FileHandle.read` sin
+    /// `autoreleasepool` y al recorrer discos enteros retenía decenas de GB de `NSData` en RAM (23/11/2026).
     static func mismoContenido(_ a: String, _ b: String) -> Bool {
-        guard let fa = FileHandle(forReadingAtPath: a), let fb = FileHandle(forReadingAtPath: b) else { return false }
-        defer { try? fa.close(); try? fb.close() }
+        let fa = open(a, O_RDONLY | O_NOFOLLOW)
+        guard fa >= 0 else { return false }
+        defer { close(fa) }
+        let fb = open(b, O_RDONLY | O_NOFOLLOW)
+        guard fb >= 0 else { return false }
+        defer { close(fb) }
+
+        let tamBloque = 256 * 1024
+        var ba = [UInt8](repeating: 0, count: tamBloque)
+        var bb = [UInt8](repeating: 0, count: tamBloque)
+
+        func leer(_ fd: Int32, en buf: inout [UInt8]) -> Int {
+            var leidos = 0
+            return buf.withUnsafeMutableBytes { ptr -> Int in
+                guard let base = ptr.baseAddress else { return -1 }
+                while leidos < tamBloque {
+                    let n = read(fd, base + leidos, tamBloque - leidos)
+                    if n < 0 {
+                        if errno == EINTR { continue }
+                        return -1
+                    }
+                    if n == 0 { break }
+                    leidos += n
+                }
+                return leidos
+            }
+        }
+
         while true {
-            let da = (try? fa.read(upToCount: 1 << 20)) ?? nil
-            let db = (try? fb.read(upToCount: 1 << 20)) ?? nil
-            if da != db { return false }
-            if da == nil || da!.isEmpty { return true }
+            let na = leer(fa, en: &ba)
+            let nb = leer(fb, en: &bb)
+            if na < 0 || nb < 0 || na != nb { return false }
+            if na == 0 { return true }
+            let iguales = ba.withUnsafeBytes { pa in
+                bb.withUnsafeBytes { pb in memcmp(pa.baseAddress!, pb.baseAddress!, na) == 0 }
+            }
+            if !iguales { return false }
         }
     }
 }

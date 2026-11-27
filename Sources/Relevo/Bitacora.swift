@@ -18,22 +18,31 @@ enum Bitacora {
     static func anotar(_ texto: String) {
         guard !Notificar.prueba else { return }
         let linea = formato.string(from: Date()) + "  " + texto + "\n"
-        cola.async {
-            let fm = FileManager.default
-            if let tam = (try? fm.attributesOfItem(atPath: archivo.path))?[.size] as? Int, tam > 1_000_000 {
-                let viejo = archivo.appendingPathExtension("1")
-                try? fm.removeItem(at: viejo)
-                try? fm.moveItem(at: archivo, to: viejo)
-            }
-            guard let datos = linea.data(using: .utf8) else { return }
-            if let h = try? FileHandle(forWritingTo: archivo) {
-                h.seekToEndOfFile()
-                h.write(datos)
-                try? h.close()
-            } else {
-                try? fm.createDirectory(at: archivo.deletingLastPathComponent(), withIntermediateDirectories: true)
-                try? datos.write(to: archivo)
-            }
+        cola.async { escribir(linea) }
+    }
+
+    /// Igual que `anotar`, pero espera a que quede escrita en el disco (para el cierre de la app).
+    static func anotarAhora(_ texto: String) {
+        guard !Notificar.prueba else { return }
+        let linea = formato.string(from: Date()) + "  " + texto + "\n"
+        cola.sync { escribir(linea) }
+    }
+
+    private static func escribir(_ linea: String) {
+        let fm = FileManager.default
+        if let tam = (try? fm.attributesOfItem(atPath: archivo.path))?[.size] as? Int, tam > 1_000_000 {
+            let viejo = archivo.appendingPathExtension("1")
+            try? fm.removeItem(at: viejo)
+            try? fm.moveItem(at: archivo, to: viejo)
+        }
+        guard let datos = linea.data(using: .utf8) else { return }
+        if let h = try? FileHandle(forWritingTo: archivo) {
+            h.seekToEndOfFile()
+            h.write(datos)
+            try? h.close()
+        } else {
+            try? fm.createDirectory(at: archivo.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try? datos.write(to: archivo)
         }
     }
 }
